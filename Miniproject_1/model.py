@@ -12,7 +12,7 @@ class Model:
     def __init__(self) -> None:
         # instantiate model + optimizer + loss function + any other stuff you need
         self.model = denoiser.Denoiser()
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = nn.MSELoss()
         self.optimizer = optim.SGD(self.model.parameters(), lr=1e-1)
         self.mini_batch_size = 5
         pass
