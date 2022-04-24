@@ -1,2 +1,2 @@
 from .model import Model
-from .others import test
+from .src import test
