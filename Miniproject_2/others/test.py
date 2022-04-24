@@ -1,0 +1,2 @@
+def oui():
+    print("coucou")
