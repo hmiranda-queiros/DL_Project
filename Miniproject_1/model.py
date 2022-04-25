@@ -19,6 +19,8 @@ class Model:
 
     def load_pretrained_model(self) -> None:
         # This loads the parameters saved in bestmodel.pth into the model
+        denoiser_state_dict = torch.load('./Miniproject_1/bestmodel.pth')
+        self.model.load_state_dict(denoiser_state_dict)
         pass
 
     def train(self, train_input, train_target, num_epochs) -> None:

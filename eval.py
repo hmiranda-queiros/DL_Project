@@ -10,7 +10,7 @@ def psnr(denoised, ground_truth):
     return -10 * torch.log10(mse + 10 ** -8)
 
 
-def main():
+def main(load, save):
     # Load the data
     noisy_imgs_1, noisy_imgs_2 = torch.load('./data/train_data.pkl', map_location=device)
     noisy_imgs, clean_imgs = torch.load('./data/val_data.pkl', map_location=device)
@@ -30,12 +30,18 @@ def main():
     noisy_imgs.div_(255)
     clean_imgs.div_(255)
 
-    # Training
-    model = Miniproject_1.Model()
-    model.train(noisy_imgs_1, noisy_imgs_2, 5)
+    denoiser = Miniproject_1.Model()
+
+    if not load:
+        # Training
+        num_epochs = 5
+        denoiser.train(noisy_imgs_1, noisy_imgs_2, num_epochs)
+
+    else:
+        denoiser.load_pretrained_model()
 
     # Validation
-    output = model.predict(noisy_imgs)
+    output = denoiser.predict(noisy_imgs)
     print(output.shape)
     noise_db = psnr(output, clean_imgs).item()
     print(noise_db)
@@ -44,6 +50,10 @@ def main():
     noise_db = psnr(noisy_imgs, clean_imgs).item()
     print(noise_db)
 
+    if save:
+        # Save the model
+        torch.save(denoiser.model.state_dict(), './Miniproject_1/bestmodel.pth')
+
 
 if __name__ == "__main__":
-    main()
+    main(load=False, save=False)
