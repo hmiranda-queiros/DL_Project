@@ -34,10 +34,14 @@ def main():
     model = Miniproject_1.Model()
     model.train(noisy_imgs_1, noisy_imgs_2, 5)
 
-    # Testing
+    # Validation
     output = model.predict(noisy_imgs)
     print(output.shape)
     noise_db = psnr(output, clean_imgs).item()
+    print(noise_db)
+
+    # Noise without filtering
+    noise_db = psnr(noisy_imgs, clean_imgs).item()
     print(noise_db)
 
 
