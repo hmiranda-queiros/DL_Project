@@ -10,7 +10,9 @@ def psnr(denoised, ground_truth):
     return -10 * torch.log10(mse + 10 ** -8)
 
 
-def main(load, save):
+def main():
+    global load, save, nb_samples, num_epochs
+
     # Load the data
     noisy_imgs_1, noisy_imgs_2 = torch.load('./data/train_data.pkl', map_location=device)
     noisy_imgs, clean_imgs = torch.load('./data/val_data.pkl', map_location=device)
@@ -18,7 +20,6 @@ def main(load, save):
     print(noisy_imgs_1.device)
 
     # Converts the data to float type
-    nb_samples = 10
     noisy_imgs_1 = noisy_imgs_1[: nb_samples].float()
     noisy_imgs_2 = noisy_imgs_2[: nb_samples].float()
     noisy_imgs = noisy_imgs[: nb_samples].float()
@@ -34,10 +35,10 @@ def main(load, save):
 
     if not load:
         # Training
-        num_epochs = 5
         denoiser.train(noisy_imgs_1, noisy_imgs_2, num_epochs)
 
     else:
+        # Load the saved best model
         denoiser.load_pretrained_model()
 
     # Validation
@@ -56,4 +57,8 @@ def main(load, save):
 
 
 if __name__ == "__main__":
-    main(load=False, save=False)
+    load = False
+    save = False
+    nb_samples = 10
+    num_epochs = 5
+    main()

@@ -15,13 +15,11 @@ class Model:
         self.criterion = nn.MSELoss()
         self.optimizer = optim.SGD(self.model.parameters(), lr=1e-1)
         self.mini_batch_size = 5
-        pass
 
     def load_pretrained_model(self) -> None:
         # This loads the parameters saved in bestmodel.pth into the model
         denoiser_state_dict = torch.load('./Miniproject_1/bestmodel.pth')
         self.model.load_state_dict(denoiser_state_dict)
-        pass
 
     def train(self, train_input, train_target, num_epochs) -> None:
         #: train_input : tensor of size (N, C, H, W) containing a noisy version of the images.
