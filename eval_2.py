@@ -2,7 +2,7 @@ import Miniproject_2
 import torch
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+torch.set_grad_enabled(False)
 
 def psnr(denoised, ground_truth):
     # Peak Signal to Noise Ratio : denoised and ground_truth have range [0, 1]

@@ -3,14 +3,14 @@ import torch
 from .src import module
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+torch.set_grad_enabled(False)
 
 # For mini-project 2
 class Model:
     def __init__(self) -> None:
         # instantiate model + optimizer + loss function + any other stuff you need
-        self.model = denoiser.Denoiser()
         """
+        self.model = denoiser.Denoiser()
         self.criterion = nn.MSELoss()
         self.optimizer = optim.SGD(self.model.parameters(), lr=1e-1)
         """
