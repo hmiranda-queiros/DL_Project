@@ -12,9 +12,10 @@ class Model:
     def __init__(self) -> None:
         # instantiate model + optimizer + loss function + any other stuff you need
         self.model = denoiser.Denoiser()
+        self.model.to(device)
         self.criterion = nn.MSELoss()
-        self.optimizer = optim.SGD(self.model.parameters(), lr=1e-1)
-        self.mini_batch_size = 5
+        self.optimizer = optim.Adam(self.model.parameters())
+        self.mini_batch_size = 100
 
     def load_pretrained_model(self) -> None:
         # This loads the parameters saved in bestmodel.pth into the model
@@ -26,6 +27,8 @@ class Model:
         #: train_target : tensor of size (N, C, H, W) containing another noisy version of the same images,
         # which only differs from the input by their noise .
         for e in range(num_epochs):
+            if e % 10 == 0:
+                print(f"Epoch number : {e}")
             for b in range(0, train_input.size(0), self.mini_batch_size):
                 output = self.model(train_input.narrow(0, b, self.mini_batch_size))
                 loss = self.criterion(output, train_target.narrow(0, b, self.mini_batch_size))

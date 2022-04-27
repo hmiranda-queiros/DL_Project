@@ -1,18 +1,91 @@
 import torch
 
 from torch import nn
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+from torch.nn import functional as F
 
 
 class Denoiser(nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv = nn.Sequential(
-            *(nn.Conv2d(in_channels=3, out_channels=3, kernel_size=5, padding=2, device=device)
-              for _ in range(8)),
+        nb_channels = 48
+        alpha = 0.1
+        kernel_size = 3
+
+        self.encoder_1 = nn.Sequential(
+            nn.Conv2d(in_channels=3, out_channels=nb_channels, kernel_size=kernel_size, padding="same"),
+            nn.LeakyReLU(negative_slope=alpha),
+            nn.Conv2d(in_channels=nb_channels, out_channels=nb_channels, kernel_size=kernel_size,
+                      padding="same"),
+            nn.LeakyReLU(negative_slope=alpha)
+        )
+
+        self.encoder_2 = nn.Sequential(
+            nn.Conv2d(in_channels=nb_channels, out_channels=nb_channels, kernel_size=kernel_size,
+                      padding="same"),
+            nn.LeakyReLU(negative_slope=alpha)
+        )
+
+        self.encoder_3 = nn.Sequential(
+            nn.Conv2d(in_channels=nb_channels, out_channels=nb_channels, kernel_size=kernel_size,
+                      padding="same"),
+            nn.LeakyReLU(negative_slope=alpha)
+        )
+
+        self.encoder_4 = nn.Sequential(
+            nn.Conv2d(in_channels=nb_channels, out_channels=nb_channels, kernel_size=kernel_size,
+                      padding="same"),
+            nn.LeakyReLU(negative_slope=alpha)
+        )
+
+        self.decoder_4 = nn.Sequential(
+            nn.Conv2d(in_channels=nb_channels * 2, out_channels=nb_channels * 2, kernel_size=kernel_size,
+                      padding="same"),
+            nn.LeakyReLU(negative_slope=alpha)
+        )
+
+        self.decoder_3 = nn.Sequential(
+            nn.Conv2d(in_channels=nb_channels * 3, out_channels=nb_channels * 2, kernel_size=kernel_size,
+                      padding="same"),
+            nn.LeakyReLU(negative_slope=alpha),
+            nn.Conv2d(in_channels=nb_channels * 2, out_channels=nb_channels * 2, kernel_size=kernel_size,
+                      padding="same"),
+            nn.LeakyReLU(negative_slope=alpha)
+        )
+
+        self.decoder_2 = nn.Sequential(
+            nn.Conv2d(in_channels=nb_channels * 3, out_channels=nb_channels * 2, kernel_size=kernel_size,
+                      padding="same"),
+            nn.LeakyReLU(negative_slope=alpha),
+            nn.Conv2d(in_channels=nb_channels * 2, out_channels=nb_channels * 2, kernel_size=kernel_size,
+                      padding="same"),
+            nn.LeakyReLU(negative_slope=alpha)
+        )
+
+        self.decoder_1 = nn.Sequential(
+            nn.Conv2d(in_channels=nb_channels * 2 + 3, out_channels=nb_channels, kernel_size=kernel_size,
+                      padding="same"),
+            nn.LeakyReLU(negative_slope=alpha),
+            nn.Conv2d(in_channels=nb_channels, out_channels=3, kernel_size=kernel_size, padding="same"),
+            nn.LeakyReLU(negative_slope=alpha)
         )
 
     def forward(self, x):
-        x = self.conv(x)
+        x0 = x
+        x1 = F.max_pool2d(self.encoder_1(x0), 2)
+        x2 = F.max_pool2d(self.encoder_2(x1), 2)
+        x3 = F.max_pool2d(self.encoder_3(x2), 2)
+        x = F.max_pool2d(self.encoder_4(x3), 2)
+
+        x = F.interpolate(x, scale_factor=2)
+        x = self.decoder_4(torch.cat((x, x3), dim=1))
+
+        x = F.interpolate(x, scale_factor=2)
+        x = self.decoder_3(torch.cat((x, x2), dim=1))
+
+        x = F.interpolate(x, scale_factor=2)
+        x = self.decoder_2(torch.cat((x, x1), dim=1))
+
+        x = F.interpolate(x, scale_factor=2)
+        x = self.decoder_1(torch.cat((x, x0), dim=1))
+
         return x
