@@ -71,10 +71,13 @@ class Denoiser(nn.Module):
 
     def forward(self, x):
         x0 = x
-        x1 = F.max_pool2d(self.encoder_1(x0), 2)
-        x2 = F.max_pool2d(self.encoder_2(x1), 2)
-        x3 = F.max_pool2d(self.encoder_3(x2), 2)
-        x = F.max_pool2d(self.encoder_4(x3), 2)
+        x = F.max_pool2d(self.encoder_1(x), 2)
+        x1 = x
+        x = F.max_pool2d(self.encoder_2(x), 2)
+        x2 = x
+        x = F.max_pool2d(self.encoder_3(x), 2)
+        x3 = x
+        x = F.max_pool2d(self.encoder_4(x), 2)
 
         x = F.interpolate(x, scale_factor=2)
         x = self.decoder_4(torch.cat((x, x3), dim=1))

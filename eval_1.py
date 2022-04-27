@@ -85,6 +85,6 @@ def main():
 if __name__ == "__main__":
     load = False
     save = False
-    nb_samples = 1000
+    nb_samples = 100
     num_epochs = 25
     main()
