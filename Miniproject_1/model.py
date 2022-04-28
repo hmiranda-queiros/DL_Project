@@ -24,16 +24,24 @@ class Model:
         denoiser_state_dict = torch.load('./Miniproject_1/bestmodel.pth')
         self.model.load_state_dict(denoiser_state_dict)
 
-    def train(self, train_input, train_target, num_epochs) -> None:
+    def train(self, train_input, train_target, num_epochs, nb_samples) -> None:
         #: train_input : tensor of size (N, C, H, W) containing a noisy version of the images.
         #: train_target : tensor of size (N, C, H, W) containing another noisy version of the same images,
         # which only differs from the input by their noise .
+        train_input_full = train_input.clone().detach()
+        train_target_full = train_target.clone().detach()
+
         print(f"Starts Training with : mini_batch_size = {self.mini_batch_size} and num epochs = {num_epochs}")
         total_time = 0
         for e in range(num_epochs):
+            # Shuffles data
+            start = time.time()
+            rand_lines = torch.randperm(train_input_full.shape[0])[:nb_samples]
+            train_input = train_input_full[rand_lines]
+            train_target = train_target_full[rand_lines]
+
             if total_time > 15 * 60:
                 break
-            start = time.time()
             if (e + 1) % 10 == 0:
                 print(f"Epoch number : {e + 1}, Total running time : {total_time:.1f} s")
             for b in range(0, train_input.size(0), self.mini_batch_size):

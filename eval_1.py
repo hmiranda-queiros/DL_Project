@@ -19,18 +19,9 @@ def main():
     noisy_imgs_1, noisy_imgs_2 = torch.load('./data/train_data.pkl', map_location=device)
     noisy_imgs, clean_imgs = torch.load('./data/val_data.pkl', map_location=device)
 
-    if random:
-        # Selects random samples
-        rand_lines = torch.randperm(noisy_imgs_1.shape[0])[:nb_samples]
-
-        # Converts the data to float type
-        noisy_imgs_1 = noisy_imgs_1[rand_lines].float()
-        noisy_imgs_2 = noisy_imgs_2[rand_lines].float()
-
-    else:
-        # Converts the data to float type
-        noisy_imgs_1 = noisy_imgs_1[:nb_samples].float()
-        noisy_imgs_2 = noisy_imgs_2[:nb_samples].float()
+    # Converts the data to float type
+    noisy_imgs_1 = noisy_imgs_1.float()
+    noisy_imgs_2 = noisy_imgs_2.float()
 
     noisy_imgs = noisy_imgs.float()
     clean_imgs = clean_imgs.float()
@@ -52,7 +43,7 @@ def main():
 
     else:
         # Training
-        denoiser.train(noisy_imgs_1, noisy_imgs_2, num_epochs)
+        denoiser.train(noisy_imgs_1, noisy_imgs_2, num_epochs, nb_samples)
 
     # Validation
     print("Starts Validation")
@@ -94,7 +85,7 @@ if __name__ == "__main__":
     load = False
     save = False
     random = False
-    nb_samples = 1000
-    num_epochs = 250
-    mini_batch_size = 10
+    nb_samples = 1600
+    num_epochs = 50
+    mini_batch_size = 400
     main()
