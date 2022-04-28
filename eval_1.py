@@ -94,7 +94,7 @@ if __name__ == "__main__":
     load = False
     save = False
     random = False
-    nb_samples = 100
-    num_epochs = 25
-    mini_batch_size = 5
+    nb_samples = 1000
+    num_epochs = 20
+    mini_batch_size = 10
     main()

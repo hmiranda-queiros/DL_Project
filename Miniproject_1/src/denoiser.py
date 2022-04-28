@@ -7,16 +7,13 @@ from torch.nn import functional as F
 class Denoiser(nn.Module):
     def __init__(self):
         super().__init__()
-        nb_channels = 48
+        nb_channels = 12
         alpha = 0.1
         kernel_size = 3
 
         self.encoder_1 = nn.Sequential(
             nn.Conv2d(in_channels=3, out_channels=nb_channels, kernel_size=kernel_size, padding="same"),
             nn.LeakyReLU(negative_slope=alpha),
-            nn.Conv2d(in_channels=nb_channels, out_channels=nb_channels, kernel_size=kernel_size,
-                      padding="same"),
-            nn.LeakyReLU(negative_slope=alpha)
         )
 
         self.encoder_2 = nn.Sequential(
@@ -31,42 +28,28 @@ class Denoiser(nn.Module):
             nn.LeakyReLU(negative_slope=alpha)
         )
 
-        self.encoder_4 = nn.Sequential(
+        self.inter_layer = nn.Sequential(
             nn.Conv2d(in_channels=nb_channels, out_channels=nb_channels, kernel_size=kernel_size,
                       padding="same"),
             nn.LeakyReLU(negative_slope=alpha)
         )
 
-        self.decoder_4 = nn.Sequential(
-            nn.Conv2d(in_channels=nb_channels * 2, out_channels=nb_channels * 2, kernel_size=kernel_size,
-                      padding="same"),
-            nn.LeakyReLU(negative_slope=alpha)
-        )
-
         self.decoder_3 = nn.Sequential(
-            nn.Conv2d(in_channels=nb_channels * 3, out_channels=nb_channels * 2, kernel_size=kernel_size,
+            nn.Conv2d(in_channels=nb_channels * 2, out_channels=nb_channels * 2, kernel_size=kernel_size,
                       padding="same"),
             nn.LeakyReLU(negative_slope=alpha),
-            nn.Conv2d(in_channels=nb_channels * 2, out_channels=nb_channels * 2, kernel_size=kernel_size,
-                      padding="same"),
-            nn.LeakyReLU(negative_slope=alpha)
         )
 
         self.decoder_2 = nn.Sequential(
             nn.Conv2d(in_channels=nb_channels * 3, out_channels=nb_channels * 2, kernel_size=kernel_size,
                       padding="same"),
             nn.LeakyReLU(negative_slope=alpha),
-            nn.Conv2d(in_channels=nb_channels * 2, out_channels=nb_channels * 2, kernel_size=kernel_size,
-                      padding="same"),
-            nn.LeakyReLU(negative_slope=alpha)
         )
 
         self.decoder_1 = nn.Sequential(
-            nn.Conv2d(in_channels=nb_channels * 2 + 3, out_channels=nb_channels, kernel_size=kernel_size,
+            nn.Conv2d(in_channels=nb_channels * 2 + 3, out_channels=3, kernel_size=kernel_size,
                       padding="same"),
             nn.LeakyReLU(negative_slope=alpha),
-            nn.Conv2d(in_channels=nb_channels, out_channels=3, kernel_size=kernel_size, padding="same"),
-            nn.LeakyReLU(negative_slope=alpha)
         )
 
     def forward(self, x):
@@ -76,11 +59,8 @@ class Denoiser(nn.Module):
         x = F.max_pool2d(self.encoder_2(x), 2)
         x2 = x
         x = F.max_pool2d(self.encoder_3(x), 2)
-        x3 = x
-        x = F.max_pool2d(self.encoder_4(x), 2)
 
-        x = F.interpolate(x, scale_factor=2)
-        x = self.decoder_4(torch.cat((x, x3), dim=1))
+        x = self.inter_layer(x)
 
         x = F.interpolate(x, scale_factor=2)
         x = self.decoder_3(torch.cat((x, x2), dim=1))
