@@ -1,4 +1,5 @@
 import torch
+import time
 
 from torch import optim
 from torch import nn
@@ -28,15 +29,22 @@ class Model:
         #: train_target : tensor of size (N, C, H, W) containing another noisy version of the same images,
         # which only differs from the input by their noise .
         print(f"Starts Training with : mini_batch_size = {self.mini_batch_size} and num epochs = {num_epochs}")
+        total_time = 0
         for e in range(num_epochs):
+            if total_time > 10 * 60:
+                break
+            start = time.time()
             if (e + 1) % 10 == 0:
-                print(f"Epoch number : {e + 1}")
+                print(f"Epoch number : {e + 1}, Total running time : {total_time:.1f} s")
             for b in range(0, train_input.size(0), self.mini_batch_size):
                 output = self.model(train_input.narrow(0, b, self.mini_batch_size))
                 loss = self.criterion(output, train_target.narrow(0, b, self.mini_batch_size))
                 self.model.zero_grad()
                 loss.backward()
                 self.optimizer.step()
+            end = time.time()
+            total_time += end - start
+        print(f"End of training with total running time : {total_time:.1f} s")
 
     def predict(self, test_input) -> torch.Tensor:
         #: test_input : tensor of size (N1 , C, H, W) that has to be denoised by the trained

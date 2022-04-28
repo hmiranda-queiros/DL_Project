@@ -59,11 +59,11 @@ def main():
     output = denoiser.predict(noisy_imgs)
     print(f"Output shape : {output.shape}")
     noise_db = psnr(output, clean_imgs).item()
-    print(f"Noise after filtering : {noise_db}")
+    print(f"Noise after filtering : {noise_db:.2f}")
 
     # Noise without filtering
     noise_db = psnr(noisy_imgs, clean_imgs).item()
-    print(f"Noise without filtering : {noise_db}")
+    print(f"Noise without filtering : {noise_db:.2f}")
 
     if save:
         # Save the model
