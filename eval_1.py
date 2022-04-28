@@ -13,7 +13,7 @@ def psnr(denoised, ground_truth):
 
 
 def main():
-    global load, save, random, nb_samples, num_epochs
+    global load, save, random, nb_samples, num_epochs, mini_batch_size
 
     # Load the data
     noisy_imgs_1, noisy_imgs_2 = torch.load('./data/train_data.pkl', map_location=device)
@@ -41,7 +41,7 @@ def main():
     noisy_imgs.div_(255)
     clean_imgs.div_(255)
 
-    denoiser = Miniproject_1.Model()
+    denoiser = Miniproject_1.Model(mini_batch_size)
 
     print(f"Device used : {noisy_imgs_1.device}")
     print(f"Input shape : {noisy_imgs_1.shape}")
@@ -55,6 +55,7 @@ def main():
         denoiser.load_pretrained_model()
 
     # Validation
+    print("Starts Validation")
     output = denoiser.predict(noisy_imgs)
     print(f"Output shape : {output.shape}")
     noise_db = psnr(output, clean_imgs).item()
@@ -92,7 +93,8 @@ def main():
 if __name__ == "__main__":
     load = False
     save = False
-    random = True
-    nb_samples = 50000
-    num_epochs = 1
+    random = False
+    nb_samples = 100
+    num_epochs = 25
+    mini_batch_size = 5
     main()
