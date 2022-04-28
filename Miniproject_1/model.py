@@ -27,7 +27,7 @@ class Model:
         #: train_input : tensor of size (N, C, H, W) containing a noisy version of the images.
         #: train_target : tensor of size (N, C, H, W) containing another noisy version of the same images,
         # which only differs from the input by their noise .
-        print(f"Starts Training with : mini_batch_size =  {self.mini_batch_size} and num epochs = {num_epochs}")
+        print(f"Starts Training with : mini_batch_size = {self.mini_batch_size} and num epochs = {num_epochs}")
         for e in range(num_epochs):
             if (e + 1) % 10 == 0:
                 print(f"Epoch number : {e + 1}")

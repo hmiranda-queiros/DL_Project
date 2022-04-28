@@ -46,13 +46,13 @@ def main():
     print(f"Device used : {noisy_imgs_1.device}")
     print(f"Input shape : {noisy_imgs_1.shape}")
 
-    if not load:
-        # Training
-        denoiser.train(noisy_imgs_1, noisy_imgs_2, num_epochs)
-
-    else:
+    if load:
         # Load the saved best model
         denoiser.load_pretrained_model()
+
+    else:
+        # Training
+        denoiser.train(noisy_imgs_1, noisy_imgs_2, num_epochs)
 
     # Validation
     print("Starts Validation")
