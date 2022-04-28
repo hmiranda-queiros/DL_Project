@@ -13,18 +13,25 @@ def psnr(denoised, ground_truth):
 
 
 def main():
-    global load, save, nb_samples, num_epochs
+    global load, save, random, nb_samples, num_epochs
 
     # Load the data
     noisy_imgs_1, noisy_imgs_2 = torch.load('./data/train_data.pkl', map_location=device)
     noisy_imgs, clean_imgs = torch.load('./data/val_data.pkl', map_location=device)
 
-    # Selects random samples
-    rand_lines = torch.randperm(noisy_imgs_1.shape[0])[:nb_samples]
+    if random:
+        # Selects random samples
+        rand_lines = torch.randperm(noisy_imgs_1.shape[0])[:nb_samples]
 
-    # Converts the data to float type
-    noisy_imgs_1 = noisy_imgs_1[rand_lines].float()
-    noisy_imgs_2 = noisy_imgs_2[rand_lines].float()
+        # Converts the data to float type
+        noisy_imgs_1 = noisy_imgs_1[rand_lines].float()
+        noisy_imgs_2 = noisy_imgs_2[rand_lines].float()
+
+    else:
+        # Converts the data to float type
+        noisy_imgs_1 = noisy_imgs_1[:nb_samples].float()
+        noisy_imgs_2 = noisy_imgs_2[:nb_samples].float()
+
     noisy_imgs = noisy_imgs.float()
     clean_imgs = clean_imgs.float()
 
@@ -85,6 +92,7 @@ def main():
 if __name__ == "__main__":
     load = False
     save = False
-    nb_samples = 100
-    num_epochs = 25
+    random = True
+    nb_samples = 50000
+    num_epochs = 1
     main()

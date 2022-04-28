@@ -16,7 +16,7 @@ class Model:
         self.criterion = nn.MSELoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.0001, betas=(0.9, 0.999), eps=1e-08)
         # self.optimizer = optim.SGD(self.model.parameters(), lr=0.1)
-        self.mini_batch_size = 5
+        self.mini_batch_size = 100
 
     def load_pretrained_model(self) -> None:
         # This loads the parameters saved in bestmodel.pth into the model
