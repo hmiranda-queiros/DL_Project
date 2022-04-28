@@ -95,6 +95,6 @@ if __name__ == "__main__":
     save = False
     random = False
     nb_samples = 1000
-    num_epochs = 20
+    num_epochs = 250
     mini_batch_size = 10
     main()

@@ -15,7 +15,7 @@ class Model:
         self.model = denoiser.Denoiser()
         self.model.to(device)
         self.criterion = nn.MSELoss()
-        self.optimizer = optim.Adam(self.model.parameters(), lr=0.0001, betas=(0.9, 0.999), eps=1e-08)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08)
         # self.optimizer = optim.SGD(self.model.parameters(), lr=0.1)
         self.mini_batch_size = mini_batch_size
 
@@ -31,7 +31,7 @@ class Model:
         print(f"Starts Training with : mini_batch_size = {self.mini_batch_size} and num epochs = {num_epochs}")
         total_time = 0
         for e in range(num_epochs):
-            if total_time > 10 * 60:
+            if total_time > 15 * 60:
                 break
             start = time.time()
             if (e + 1) % 10 == 0:
