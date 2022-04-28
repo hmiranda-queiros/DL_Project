@@ -34,8 +34,8 @@ class Model:
         print(f"Starts Training with : mini_batch_size = {self.mini_batch_size} and num epochs = {num_epochs}")
         total_time = 0
         for e in range(num_epochs):
-            # Shuffles data
             start = time.time()
+            # Shuffles data
             rand_lines = torch.randperm(train_input_full.shape[0])[:nb_samples]
             train_input = train_input_full[rand_lines]
             train_target = train_target_full[rand_lines]
