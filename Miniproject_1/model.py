@@ -9,6 +9,12 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 # For mini-project 1
+def psnr(denoised, ground_truth):
+    # Peak Signal to Noise Ratio : denoised and ground_truth have range [0, 1]
+    mse = torch.mean((denoised - ground_truth) ** 2)
+    return -10 * torch.log10(mse + 10 ** -8)
+
+
 class Model:
     def __init__(self, mini_batch_size) -> None:
         # instantiate model + optimizer + loss function + any other stuff you need
@@ -24,7 +30,7 @@ class Model:
         denoiser_state_dict = torch.load('./Miniproject_1/bestmodel.pth')
         self.model.load_state_dict(denoiser_state_dict)
 
-    def train(self, train_input, train_target, num_epochs, nb_samples) -> None:
+    def train(self, train_input, train_target, num_epochs, nb_samples, noisy_imgs, clean_imgs) -> None:
         #: train_input : tensor of size (N, C, H, W) containing a noisy version of the images.
         #: train_target : tensor of size (N, C, H, W) containing another noisy version of the same images,
         # which only differs from the input by their noise .
@@ -40,18 +46,22 @@ class Model:
             train_input = train_input_full[rand_lines]
             train_target = train_target_full[rand_lines]
 
-            if total_time > 15 * 60:
+            if total_time > 10 * 60:
                 break
-            if (e + 1) % 10 == 0:
-                print(f"Epoch number : {e + 1}, Total running time : {total_time:.1f} s")
+
             for b in range(0, train_input.size(0), self.mini_batch_size):
                 output = self.model(train_input.narrow(0, b, self.mini_batch_size))
                 loss = self.criterion(output, train_target.narrow(0, b, self.mini_batch_size))
                 self.model.zero_grad()
                 loss.backward()
                 self.optimizer.step()
+
             end = time.time()
             total_time += end - start
+
+            if (e + 1) % 10 == 0:
+                print(f"Epoch number : {e + 1}, PSNR : {self.validation(noisy_imgs, clean_imgs):.2f}, Total running time : {total_time:.1f} s")
+
         print(f"End of training with total running time : {total_time:.1f} s")
 
     def predict(self, test_input) -> torch.Tensor:
@@ -59,6 +69,10 @@ class Model:
         # or the loaded network.
         #: returns a tensor of the size (N1 , C, H, W)
         output = torch.empty(0).to(device)
-        for b in range(0, test_input.size(0), 100):
-            output = torch.cat((output, self.model(test_input.narrow(0, b, 100))), 0)
+        for b in range(0, test_input.size(0), 200):
+            output = torch.cat((output, self.model(test_input.narrow(0, b, 200))), 0)
         return output
+
+    def validation(self, noisy_imgs, clean_imgs):
+        output = self.predict(noisy_imgs)
+        return psnr(output, clean_imgs).item()
