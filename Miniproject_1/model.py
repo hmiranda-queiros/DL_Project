@@ -21,7 +21,9 @@ class Model:
         self.model = denoiser.Denoiser()
         self.model.to(device)
         self.criterion = nn.MSELoss()
-        self.optimizer = optim.Adam(self.model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08)
+        self.lr = 0.001
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr, betas=(0.9, 0.999), eps=1e-08)
+        # self.optimizer = optim.RMSprop(self.model.parameters(), lr=self.lr, alpha=0.99, eps=1e-08)
         # self.optimizer = optim.SGD(self.model.parameters(), lr=0.1)
         self.mini_batch_size = mini_batch_size
 
@@ -60,7 +62,13 @@ class Model:
             total_time += end - start
 
             if (e + 1) % 10 == 0:
-                print(f"Epoch number : {e + 1}, PSNR : {self.validation(noisy_imgs, clean_imgs):.2f}, Total running time : {total_time:.1f} s")
+                result = self.validation(noisy_imgs, clean_imgs)
+
+                # if result > 23 and self.lr == 0.001:
+                #     self.lr = 0.001
+                #     self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr, betas=(0.9, 0.999), eps=1e-08)
+
+                print(f"Epoch number : {e + 1}, PSNR : {result:.2f}, Total running time : {total_time:.1f} s")
 
         print(f"End of training with total running time : {total_time:.1f} s")
 
