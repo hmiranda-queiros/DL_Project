@@ -64,9 +64,15 @@ class Model:
             if (e + 1) % 10 == 0:
                 result = self.validation(noisy_imgs, clean_imgs)
 
-                # if result > 23 and self.lr == 0.001:
-                #     self.lr = 0.001
-                #     self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr, betas=(0.9, 0.999), eps=1e-08)
+                if result >= 22:
+                    self.mini_batch_size = 50
+                    # self.lr = 0.001
+                    # self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr, betas=(0.9, 0.999), eps=1e-08)
+                if result >= 23:
+                    self.mini_batch_size = 25
+
+                if result >= 24:
+                    self.mini_batch_size = 12
 
                 print(f"Epoch number : {e + 1}, PSNR : {result:.2f}, Total running time : {total_time:.1f} s")
 
