@@ -110,28 +110,28 @@ class Sequential(Module):
 
 if __name__ == "__main__":
     # t = Relu()
-    # x = -torch.ones((1, 4, 1))
-    # g = torch.ones((1, 4, 1))
+    # x = -torch.ones((1, 4, 1)).to(device)
+    # g = torch.ones((1, 4, 1)).to(device)
     # print(t(x))
     # print(t.backward(g))
     # print(x)
 
     # t = Sigmoid()
-    # x = torch.ones((1, 4, 1)) * 0
-    # g = torch.ones((1, 4, 1))
+    # x = torch.ones((1, 4, 1)).to(device) * 0
+    # g = torch.ones((1, 4, 1)).to(device)
     # print(t(x))
     # print(t.backward(g))
     # print(x)
 
     # t = MSELoss()
-    # x = torch.ones((1 ,4, 1)) * 0
-    # y = torch.ones((1 ,4, 1))
+    # x = torch.ones((1 ,4, 1)).to(device) * 0
+    # y = torch.ones((1 ,4, 1)).to(device)
     # print(t.forward(x, y))
     # print(t.backward())
     # print(x)
 
     # layers = Sequential(Relu(), Sigmoid())
-    # x = torch.ones((1, 4, 1)) * -1
+    # x = torch.ones((1, 4, 1)).to(device) * -1
     # print(layers(x))
     # print(x)
 
