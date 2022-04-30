@@ -32,47 +32,49 @@ class Model:
         denoiser_state_dict = torch.load('./Miniproject_1/bestmodel.pth')
         self.model.load_state_dict(denoiser_state_dict)
 
-    def train(self, train_input, train_target, num_epochs, nb_samples, test_input, test_target) -> None:
+    def train(self, train_input, train_target, num_epochs, test_input, test_target) -> None:
         #: train_input : tensor of size (N, C, H, W) containing a noisy version of the images.
         #: train_target : tensor of size (N, C, H, W) containing another noisy version of the same images,
         # which only differs from the input by their noise .
-        print(f"Starts Training with : num samples = {nb_samples}, mini_batch_size = {self.mini_batch_size} and num "
-              f"epochs = {num_epochs}")
+        print(f"Starts Training with : mini_batch_size = {self.mini_batch_size} and num epochs = {num_epochs}")
         total_time = 0
+        nb_step = 0
 
         for e in range(num_epochs):
-            start = time.time()
             # Shuffles data
-            rand_lines = torch.randperm(train_input.shape[0])[:nb_samples]
+            rand_lines = torch.randperm(train_input.shape[0])
 
-            for b in range(0, nb_samples, self.mini_batch_size):
+            for b in range(0, train_input.size(0), self.mini_batch_size):
+                start = time.time()
+
                 output = self.model(train_input[rand_lines].narrow(0, b, self.mini_batch_size))
                 loss = self.criterion(output, train_target[rand_lines].narrow(0, b, self.mini_batch_size))
                 self.model.zero_grad()
                 loss.backward()
                 self.optimizer.step()
+                nb_step += 1
 
-            end = time.time()
-            total_time += end - start
+                end = time.time()
+                total_time += end - start
 
-            if (e + 1) % 10 == 0:
-                result = self.validation(test_input, test_target)
+                if nb_step % 25 == 0:
+                    result = self.validation(test_input, test_target)
 
-                if result >= 22:
-                    self.mini_batch_size = 50
-                    # self.lr = 0.001
-                    # self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr, betas=(0.9, 0.999), eps=1e-08)
-                if result >= 23:
-                    self.mini_batch_size = 25
+                    # if result >= 22:
+                    #     self.mini_batch_size = 50
 
-                if result >= 24:
-                    self.mini_batch_size = 25
+                    # if result >= 23:
+                    #     self.mini_batch_size = 25
+                    #
+                    # if result >= 24:
+                    #     self.mini_batch_size = 25
 
-                print(f"Epoch number : {e + 1}, PSNR : {result:.2f}, mini_batch_size = {self.mini_batch_size}, Total "
-                      f"running time : {total_time:.1f} s")
+                    print(
+                        f"Epoch number : {e + 1}, Step number : {nb_step}, PSNR : {result:.2f},"
+                        f" mini_batch_size = {self.mini_batch_size}, Total running time : {total_time:.1f} s")
 
-            if total_time > 10 * 60:
-                break
+                if total_time > 10 * 60:
+                    break
 
         print(f"End of training with total running time : {total_time:.1f} s")
 

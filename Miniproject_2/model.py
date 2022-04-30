@@ -5,6 +5,7 @@ from .src import module
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 torch.set_grad_enabled(False)
 
+
 # For mini-project 2
 class Model:
     def __init__(self) -> None:
@@ -16,25 +17,15 @@ class Model:
         """
         self.mini_batch_size = 5
 
-
     def load_pretrained_model(self) -> None:
         # This loads the parameters saved in bestmodel.pth into the model
-        denoiser_state_dict = torch.load('./Miniproject_2/bestmodel.pth')
-        self.model.load_state_dict(denoiser_state_dict)
+        pass
 
     def train(self, train_input, train_target) -> None:
         #: train_input : tensor of size (N, C, H, W) containing a noisy version of the images.
         #: train_target : tensor of size (N, C, H, W) containing another noisy version of the same images,
         # which only differs from the input by their noise .
-        """
-        for e in range(num_epochs):
-            for b in range(0, train_input.size(0), self.mini_batch_size):
-                output = self.model(train_input.narrow(0, b, self.mini_batch_size))
-                loss = self.criterion(output, train_target.narrow(0, b, self.mini_batch_size))
-                self.model.zero_grad()
-                loss.backward()
-                self.optimizer.step()
-        """
+        pass
 
     def predict(self, test_input) -> torch.Tensor:
         #: test_input : tensor of size (N1 , C, H, W) that has to be denoised by the trained

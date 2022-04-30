@@ -43,7 +43,7 @@ def main():
 
     else:
         # Training
-        denoiser.train(noisy_imgs_1, noisy_imgs_2, num_epochs, nb_samples, noisy_imgs, clean_imgs)
+        denoiser.train(noisy_imgs_1, noisy_imgs_2, num_epochs, noisy_imgs, clean_imgs)
 
     # Validation
     print("Starts Validation")
@@ -84,7 +84,6 @@ def main():
 if __name__ == "__main__":
     load = False
     save = False
-    nb_samples = 300
-    num_epochs = 10000
+    num_epochs = 2
     mini_batch_size = 100
     main()
