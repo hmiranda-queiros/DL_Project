@@ -66,7 +66,7 @@ class Model:
                     self.mini_batch_size = 25
 
                 if result >= 24:
-                    self.mini_batch_size = 12
+                    self.mini_batch_size = 25
 
                 print(f"Epoch number : {e + 1}, PSNR : {result:.2f}, mini_batch_size = {self.mini_batch_size}, Total "
                       f"running time : {total_time:.1f} s")
