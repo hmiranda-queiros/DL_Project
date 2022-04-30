@@ -32,28 +32,22 @@ class Model:
         denoiser_state_dict = torch.load('./Miniproject_1/bestmodel.pth')
         self.model.load_state_dict(denoiser_state_dict)
 
-    def train(self, train_input, train_target, num_epochs, nb_samples, noisy_imgs, clean_imgs) -> None:
+    def train(self, train_input, train_target, num_epochs, nb_samples, test_input, test_target) -> None:
         #: train_input : tensor of size (N, C, H, W) containing a noisy version of the images.
         #: train_target : tensor of size (N, C, H, W) containing another noisy version of the same images,
         # which only differs from the input by their noise .
-        train_input_full = train_input.clone().detach()
-        train_target_full = train_target.clone().detach()
-
-        print(f"Starts Training with : mini_batch_size = {self.mini_batch_size} and num epochs = {num_epochs}")
+        print(f"Starts Training with : num samples = {nb_samples}, mini_batch_size = {self.mini_batch_size} and num "
+              f"epochs = {num_epochs}")
         total_time = 0
+
         for e in range(num_epochs):
             start = time.time()
             # Shuffles data
-            rand_lines = torch.randperm(train_input_full.shape[0])[:nb_samples]
-            train_input = train_input_full[rand_lines]
-            train_target = train_target_full[rand_lines]
+            rand_lines = torch.randperm(train_input.shape[0])[:nb_samples]
 
-            if total_time > 10 * 60:
-                break
-
-            for b in range(0, train_input.size(0), self.mini_batch_size):
-                output = self.model(train_input.narrow(0, b, self.mini_batch_size))
-                loss = self.criterion(output, train_target.narrow(0, b, self.mini_batch_size))
+            for b in range(0, nb_samples, self.mini_batch_size):
+                output = self.model(train_input[rand_lines].narrow(0, b, self.mini_batch_size))
+                loss = self.criterion(output, train_target[rand_lines].narrow(0, b, self.mini_batch_size))
                 self.model.zero_grad()
                 loss.backward()
                 self.optimizer.step()
@@ -62,7 +56,7 @@ class Model:
             total_time += end - start
 
             if (e + 1) % 10 == 0:
-                result = self.validation(noisy_imgs, clean_imgs)
+                result = self.validation(test_input, test_target)
 
                 if result >= 22:
                     self.mini_batch_size = 50
@@ -74,7 +68,11 @@ class Model:
                 if result >= 24:
                     self.mini_batch_size = 12
 
-                print(f"Epoch number : {e + 1}, PSNR : {result:.2f}, Total running time : {total_time:.1f} s")
+                print(f"Epoch number : {e + 1}, PSNR : {result:.2f}, mini_batch_size = {self.mini_batch_size}, Total "
+                      f"running time : {total_time:.1f} s")
+
+            if total_time > 10 * 60:
+                break
 
         print(f"End of training with total running time : {total_time:.1f} s")
 
@@ -83,10 +81,10 @@ class Model:
         # or the loaded network.
         #: returns a tensor of the size (N1 , C, H, W)
         output = torch.empty(0).to(device)
-        for b in range(0, test_input.size(0), 200):
-            output = torch.cat((output, self.model(test_input.narrow(0, b, 200))), 0)
+        for b in range(0, test_input.size(0), 100):
+            output = torch.cat((output, self.model(test_input.narrow(0, b, 100))), 0)
         return output
 
-    def validation(self, noisy_imgs, clean_imgs):
-        output = self.predict(noisy_imgs)
-        return psnr(output, clean_imgs).item()
+    def validation(self, test_input, test_target):
+        output = self.predict(test_input)
+        return psnr(output, test_target).item()
