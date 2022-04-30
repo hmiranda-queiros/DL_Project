@@ -1,21 +1,20 @@
 import torch
 
-from .src import module
+from .src import module as m
+from .src import denoiser
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 torch.set_grad_enabled(False)
+
 
 # For mini-project 2
 class Model:
     def __init__(self) -> None:
         # instantiate model + optimizer + loss function + any other stuff you need
-        """
         self.model = denoiser.Denoiser()
-        self.criterion = nn.MSELoss()
-        self.optimizer = optim.SGD(self.model.parameters(), lr=1e-1)
-        """
+        self.criterion = m.MSELoss()
+        self.optimizer = m.SGD(self.model.parameters(), lr=1e-1)
         self.mini_batch_size = 5
-
 
     def load_pretrained_model(self) -> None:
         # This loads the parameters saved in bestmodel.pth into the model
