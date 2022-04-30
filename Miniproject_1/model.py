@@ -64,7 +64,7 @@ class Model:
 
                 if total_time > 10 * 60:
                     print("10 mins exceeded")
-                    break
+                    return None
 
             # adapt minibatch_size
             if result >= 23:
