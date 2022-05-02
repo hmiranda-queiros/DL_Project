@@ -13,7 +13,7 @@ def psnr(denoised, ground_truth):
 
 
 def main():
-    global load, save, nb_samples, num_epochs, mini_batch_size
+    global load, save, num_epochs, mini_batch_size
 
     # Load the data
     noisy_imgs_1, noisy_imgs_2 = torch.load('./data/train_data.pkl', map_location=device)
