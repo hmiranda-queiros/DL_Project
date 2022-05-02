@@ -138,8 +138,9 @@ class Conv(Module):
 
         self.input = input.clone().detach()
 
-        # conv = torch.nn.Conv2d(self.in_channels, self.out_channels, self.kernel_size, self.stride, self.padding,
-        #                        self.dilation)
+        # conv = torch.nn.Conv2d(in_channels=self.in_channels, out_channels=self.out_channels,
+        #                        kernel_size=self.kernel_size, stride=self.stride, padding=self.padding,
+        #                        dilation=self.dilation)
         # expected = conv(input)
         # self.weight = conv.weight
         # self.bias = conv.bias
@@ -193,19 +194,16 @@ class ConvTranspose(Module):
         self.input = input.clone().detach()
 
         convtrans = torch.nn.ConvTranspose2d(in_channels=self.in_channels, out_channels=self.out_channels,
-                                             kernel_size=self.kernel_size, stride=1, padding=0, output_padding=0)
+                                             kernel_size=self.kernel_size, stride=self.stride, padding=self.padding,
+                                             output_padding=self.output_padding, dilation=self.dilation)
         expected = convtrans(input)
         self.weight = convtrans.weight
         self.bias = convtrans.bias
 
         wxb = input.clone().detach().view(batch_size, self.in_channels, H_in * W_in)
-        print(self.weight.view(self.out_channels * self.kernel_size[0] * self.kernel_size[1], -1).shape)
-        print(wxb.shape)
-        unfolded = self.weight.view(self.out_channels * self.kernel_size[0] * self.kernel_size[1], -1) @ wxb
+        unfolded = self.weight.view(self.in_channels, -1).t() @ wxb
         output = fold(unfolded, output_size=(H_out, W_out), kernel_size=self.kernel_size, dilation=self.dilation,
                       padding=self.padding, stride=self.stride) + self.bias.view(1, -1, 1, 1)
-
-        print(unfolded.shape)
 
         torch.testing.assert_allclose(output, expected)
 
@@ -249,10 +247,10 @@ if __name__ == "__main__":
     # x = torch.randn((5, 3, 32, 32))
     # cv(x)
 
-    cvt = ConvTranspose(in_channels=1, out_channels=5, kernel_size=(3, 3), stride=1, padding=0, output_padding=0,
-                        dilation=1)
-    x = torch.randn((1, 1, 32, 32))
-    print(cvt(x).shape)
+    # cvt = ConvTranspose(in_channels=5, out_channels=2, kernel_size=(5, 2), stride=2, padding=2, output_padding=1,
+    #                     dilation=2)
+    # x = torch.randn((6, 5, 32, 32))
+    # print(cvt(x).shape)
 
     # fold = torch.nn.Fold(output_size=(4, 5), kernel_size=(2, 2))
     # x = torch.ones(1, 2 * 2, 12)
