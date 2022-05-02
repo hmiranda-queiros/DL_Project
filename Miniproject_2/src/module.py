@@ -109,7 +109,7 @@ class Sequential(Module):
 
 
 class Conv(Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1) -> None:
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, bias_mode=True) -> None:
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = [kernel_size, (kernel_size, kernel_size)][type(kernel_size) == int]
@@ -117,12 +117,13 @@ class Conv(Module):
         self.dilation = [dilation, (dilation, dilation)][type(dilation) == int]
         self.padding = [[padding, (padding, padding)][type(padding) == int],
                         ((self.kernel_size[0] - 1) // 2, (self.kernel_size[1] - 1) // 2)][padding == "same"]
+        self.bias_mode = bias_mode
 
         self.input = None
         self.weight = empty((out_channels, in_channels, self.kernel_size[0], self.kernel_size[1]))
         self.bias = empty(out_channels)
-        self.weight_grad = empty((out_channels, in_channels, self.kernel_size[0], self.kernel_size[1]))
-        self.bias_grad = empty(out_channels)
+        self.gradwrtweight = empty((out_channels, in_channels, self.kernel_size[0], self.kernel_size[1]))
+        self.gradwrtbias = empty(out_channels)
 
     def __call__(self, input):
         return self.forward(input)
@@ -140,30 +141,65 @@ class Conv(Module):
 
         # conv = torch.nn.Conv2d(in_channels=self.in_channels, out_channels=self.out_channels,
         #                        kernel_size=self.kernel_size, stride=self.stride, padding=self.padding,
-        #                        dilation=self.dilation)
+        #                        dilation=self.dilation, bias=self.bias_mode)
         # expected = conv(input)
         # self.weight = conv.weight
         # self.bias = conv.bias
 
         unfolded = unfold(self.input, kernel_size=self.kernel_size, dilation=self.dilation,
                           padding=self.padding, stride=self.stride)
-        wxb = self.weight.view(self.out_channels, -1) @ unfolded + self.bias.view(1, -1, 1)
+        wxb = self.weight.view(self.out_channels, -1) @ unfolded
+        if self.bias_mode:
+            wxb += self.bias.view(1, -1, 1)
         output = wxb.view(batch_size, self.out_channels, H_out, W_out)
 
         # torch.testing.assert_allclose(output, expected)
 
         return output
 
-    def backward(self, *gradwrtoutput):
-        raise NotImplementedError
+    def backward(self, gradwrtoutput):
+        batch_size = gradwrtoutput.size(0)
+
+        cvt = ConvTranspose(in_channels=self.out_channels, out_channels=self.in_channels,
+                            kernel_size=self.kernel_size, stride=self.stride, padding=self.padding,
+                            output_padding=0, dilation=self.dilation, bias_mode=False)
+        cvt.weigth = self.weight
+        gradwrtinput = cvt(gradwrtoutput)
+
+        while gradwrtinput.size() != self.input.size():
+            cvt.output_padding = (cvt.output_padding[0] + 1, cvt.output_padding[1] + 1)
+            gradwrtinput = cvt(gradwrtoutput)
+
+        unfolded = unfold(self.input, kernel_size=self.kernel_size, dilation=self.dilation,
+                          padding=self.padding, stride=self.stride)
+
+        print(unfolded.size())
+        print(gradwrtoutput.view(self.out_channels, batch_size, 1, -1).size())
+
+        gradwrtweight = unfolded * gradwrtoutput.view(self.out_channels, batch_size, 1, -1)
+        print(gradwrtweight.size())
+        gradwrtweight = gradwrtweight.sum(dim=3)
+        print(gradwrtweight.size())
+        gradwrtweight = gradwrtweight.view(batch_size, self.out_channels, self.in_channels, self.kernel_size[0],
+                                           self.kernel_size[1])
+
+        print(gradwrtweight.size())
+
+        self.gradwrtweight = gradwrtweight.sum(dim=0)
+
+        print(self.gradwrtweight.size())
+
+        self.gradwrtbias = gradwrtoutput
+
+        return gradwrtinput
 
     def param(self):
-        return [[self.weight, self.grad_weight], [self.bias, self.grad_bias]]
+        return [[self.weight, self.gradwrtweight], [self.bias, self.gradwrtbias]]
 
 
 class ConvTranspose(Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, output_padding=0,
-                 dilation=1) -> None:
+                 dilation=1, bias_mode=True) -> None:
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = [kernel_size, (kernel_size, kernel_size)][type(kernel_size) == int]
@@ -172,6 +208,7 @@ class ConvTranspose(Module):
         self.padding = [[padding, (padding, padding)][type(padding) == int],
                         ((self.kernel_size[0] - 1) // 2, (self.kernel_size[1] - 1) // 2)][padding == "same"]
         self.output_padding = [output_padding, (output_padding, output_padding)][type(output_padding) == int]
+        self.bias_mode = bias_mode
 
         self.input = None
         self.weight = empty((in_channels, out_channels, self.kernel_size[0], self.kernel_size[1]))
@@ -195,7 +232,9 @@ class ConvTranspose(Module):
 
         # convtrans = torch.nn.ConvTranspose2d(in_channels=self.in_channels, out_channels=self.out_channels,
         #                                      kernel_size=self.kernel_size, stride=self.stride, padding=self.padding,
-        #                                      output_padding=self.output_padding, dilation=self.dilation)
+        #                                      output_padding=self.output_padding, dilation=self.dilation,
+        #                                      bias=self.bias_mode)
+
         # expected = convtrans(input)
         # self.weight = convtrans.weight
         # self.bias = convtrans.bias
@@ -203,7 +242,10 @@ class ConvTranspose(Module):
         wxb = input.view(batch_size, self.in_channels, H_in * W_in)
         unfolded = self.weight.view(self.in_channels, -1).t() @ wxb
         output = fold(unfolded, output_size=(H_out, W_out), kernel_size=self.kernel_size, dilation=self.dilation,
-                      padding=self.padding, stride=self.stride) + self.bias.view(1, -1, 1, 1)
+                      padding=self.padding, stride=self.stride)
+
+        if self.bias_mode:
+            output += self.bias.view(1, -1, 1, 1)
 
         # torch.testing.assert_allclose(output, expected)
 
@@ -243,9 +285,18 @@ if __name__ == "__main__":
     # print(layers(x))
     # print(x)
 
-    # cv = Conv(in_channels=3, out_channels=4, kernel_size=(3, 2), stride=2, padding=(4,5), dilation=2)
+    cv = Conv(in_channels=2, out_channels=2, kernel_size=3, stride=1, padding=0, dilation=1)
     # x = torch.randn((5, 3, 32, 32))
-    # cv(x)
+    x = torch.randn(5, 2, 5, 5)
+    y = torch.ones_like(cv(x))
+    cv.backward(y)
+
+    conv = torch.nn.Conv2d(in_channels=2, out_channels=2, kernel_size=3, stride=1, padding=0, dilation=1)
+    expected = conv(input)
+    cv.weight = conv.weight
+    cv.bias = conv.bias
+
+    conv.back
 
     # cvt = ConvTranspose(in_channels=5, out_channels=2, kernel_size=(5, 2), stride=2, padding=2, output_padding=1,
     #                     dilation=2)
