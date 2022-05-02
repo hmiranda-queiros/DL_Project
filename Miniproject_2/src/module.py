@@ -145,7 +145,7 @@ class Conv(Module):
         # self.weight = conv.weight
         # self.bias = conv.bias
 
-        unfolded = unfold(input, kernel_size=self.kernel_size, dilation=self.dilation,
+        unfolded = unfold(self.input, kernel_size=self.kernel_size, dilation=self.dilation,
                           padding=self.padding, stride=self.stride)
         wxb = self.weight.view(self.out_channels, -1) @ unfolded + self.bias.view(1, -1, 1)
         output = wxb.view(batch_size, self.out_channels, H_out, W_out)
@@ -193,19 +193,19 @@ class ConvTranspose(Module):
 
         self.input = input.clone().detach()
 
-        convtrans = torch.nn.ConvTranspose2d(in_channels=self.in_channels, out_channels=self.out_channels,
-                                             kernel_size=self.kernel_size, stride=self.stride, padding=self.padding,
-                                             output_padding=self.output_padding, dilation=self.dilation)
-        expected = convtrans(input)
-        self.weight = convtrans.weight
-        self.bias = convtrans.bias
+        # convtrans = torch.nn.ConvTranspose2d(in_channels=self.in_channels, out_channels=self.out_channels,
+        #                                      kernel_size=self.kernel_size, stride=self.stride, padding=self.padding,
+        #                                      output_padding=self.output_padding, dilation=self.dilation)
+        # expected = convtrans(input)
+        # self.weight = convtrans.weight
+        # self.bias = convtrans.bias
 
-        wxb = input.clone().detach().view(batch_size, self.in_channels, H_in * W_in)
+        wxb = input.view(batch_size, self.in_channels, H_in * W_in)
         unfolded = self.weight.view(self.in_channels, -1).t() @ wxb
         output = fold(unfolded, output_size=(H_out, W_out), kernel_size=self.kernel_size, dilation=self.dilation,
                       padding=self.padding, stride=self.stride) + self.bias.view(1, -1, 1, 1)
 
-        torch.testing.assert_allclose(output, expected)
+        # torch.testing.assert_allclose(output, expected)
 
         return output
 
