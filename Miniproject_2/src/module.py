@@ -223,8 +223,33 @@ class ConvTranspose(Module):
 
         return output
 
-    def backward(self, *grad_output):
-        raise NotImplementedError
+    def backward(self, grad_output):
+        batch_size = grad_output.size(0)
+
+        # Computes grad_input
+        cv = Conv(in_channels=self.out_channels, out_channels=self.in_channels,
+                  kernel_size=self.kernel_size, stride=self.stride, padding=self.padding,
+                  dilation=self.dilation, bias_mode=False)
+        cv.weigth = self.weight
+        grad_input = cv(grad_output)
+
+        # Computes grad_weight
+        H_in = self.input.size(2)
+        W_in = self.input.size(3)
+        wxb = self.input.view(batch_size, self.in_channels, H_in * W_in)
+        grad_output_unfolded = unfold(grad_output, kernel_size=self.kernel_size, dilation=self.dilation,
+                                      padding=self.padding, stride=self.stride)
+        grad_weight = wxb * grad_output_unfolded.view(self.out_channels * self.kernel_size[0] * self.kernel_size[1],
+                                                      batch_size, 1, -1)
+        grad_weight = grad_weight.sum(dim=3)
+        grad_weight = grad_weight.view(batch_size, self.in_channels, self.out_channels, self.kernel_size[0],
+                                       self.kernel_size[1])
+        self.grad_weight = grad_weight.sum(dim=0)
+
+        # Computes grad_bias
+        self.grad_bias = grad_output
+
+        return grad_input
 
     def param(self):
         return [[self.weight, self.grad_weight], [self.bias, self.grad_bias]]
@@ -276,39 +301,46 @@ if __name__ == "__main__":
     #           dilation=dilation, bias_mode=bias_mode)
     # cv.weight = conv.weight
     # cv.bias = conv.bias
-    # x = torch.randn((6, 5, 32, 32))
+    # x = torch.randn((6, in_channels, 32, 32))
     # output = cv(x)
     # expected = conv(x)
     # torch.testing.assert_allclose(output, expected)
     # print(cv(x).shape)
 
+    # x = torch.ones((6, in_channels, 32, 32))
     # y = torch.ones_like(cv(x))
     # cv.backward(y)
     # param = cv.param()
     # print(param[0][1].size())
 
-    in_channels = 5
-    out_channels = 2
-    kernel_size = (5, 2)
-    stride = 2
-    padding = (3, 2)
-    output_padding = 1
-    dilation = 2
-    bias_mode = True
-    convtrans = torch.nn.ConvTranspose2d(in_channels=in_channels, out_channels=out_channels,
-                                         kernel_size=kernel_size, stride=stride, padding=padding,
-                                         output_padding=output_padding, dilation=dilation,
-                                         bias=bias_mode)
-    cvt = ConvTranspose(in_channels=in_channels, out_channels=out_channels,
-                        kernel_size=kernel_size, stride=stride, padding=padding,
-                        output_padding=output_padding, dilation=dilation,
-                        bias_mode=bias_mode)
-    cvt.weight = convtrans.weight
-    cvt.bias = convtrans.bias
-    x = torch.randn((6, 5, 32, 32))
-    output = cvt(x)
-    expected = convtrans(x)
-    torch.testing.assert_allclose(output, expected)
-    print(cvt(x).shape)
+    # in_channels = 2
+    # out_channels = 4
+    # kernel_size = (8, 4)
+    # stride = 2
+    # padding = 2
+    # output_padding = 1
+    # dilation = 2
+    # bias_mode = True
+    # convtrans = torch.nn.ConvTranspose2d(in_channels=in_channels, out_channels=out_channels,
+    #                                      kernel_size=kernel_size, stride=stride, padding=padding,
+    #                                      output_padding=output_padding, dilation=dilation,
+    #                                      bias=bias_mode)
+    # cvt = ConvTranspose(in_channels=in_channels, out_channels=out_channels,
+    #                     kernel_size=kernel_size, stride=stride, padding=padding,
+    #                     output_padding=output_padding, dilation=dilation,
+    #                     bias_mode=bias_mode)
+    # cvt.weight = convtrans.weight
+    # cvt.bias = convtrans.bias
+    # x = torch.randn((6, in_channels, 32, 32))
+    # output = cvt(x)
+    # expected = convtrans(x)
+    # torch.testing.assert_allclose(output, expected)
+    # print(cvt(x).shape)
+    #
+    # x = torch.ones((5, in_channels, 32, 32))
+    # y = torch.ones_like(cvt(x))
+    # cvt.backward(y)
+    # param = cvt.param()
+    # print(param[0][1].size())
 
     print("end")
