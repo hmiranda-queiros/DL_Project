@@ -82,7 +82,10 @@ class SGD(Module):
         self.lr = lr
 
     def step(self):
-        return self.parameters - self.lr * self.parameters[1]
+        for p in self.parameters:
+            if p:
+                p[0][0] -= self.lr * p[0][1]
+                p[1][0] -= self.lr * p[1][1]
 
 
 class Sequential(Module):
@@ -105,7 +108,10 @@ class Sequential(Module):
             d = m.backward(d)
 
     def param(self):
-        pass
+        param_list = []
+        for m in self.layers:
+            param_list += [m.param()]
+        return param_list
 
 
 class Conv(Module):
@@ -119,10 +125,10 @@ class Conv(Module):
         self.bias_mode = bias_mode
 
         self.input = None
-        self.weight = empty((out_channels, in_channels, self.kernel_size[0], self.kernel_size[1]))
-        self.bias = empty(out_channels)
-        self.grad_weight = empty((out_channels, in_channels, self.kernel_size[0], self.kernel_size[1]))
-        self.grad_bias = empty(out_channels)
+        self.weight = empty((out_channels, in_channels, self.kernel_size[0], self.kernel_size[1])).to(device)
+        self.bias = empty(out_channels).to(device)
+        self.grad_weight = empty((out_channels, in_channels, self.kernel_size[0], self.kernel_size[1])).to(device)
+        self.grad_bias = empty(out_channels).to(device)
 
     def __call__(self, input):
         return self.forward(input)
@@ -194,10 +200,10 @@ class ConvTranspose(Module):
         self.bias_mode = bias_mode
 
         self.input = None
-        self.weight = empty((in_channels, out_channels, self.kernel_size[0], self.kernel_size[1]))
-        self.bias = empty(out_channels)
-        self.grad_weight = empty((in_channels, out_channels, self.kernel_size[0], self.kernel_size[1]))
-        self.grad_bias = empty(out_channels)
+        self.weight = empty((in_channels, out_channels, self.kernel_size[0], self.kernel_size[1])).to(device)
+        self.bias = empty(out_channels).to(device)
+        self.grad_weight = empty((in_channels, out_channels, self.kernel_size[0], self.kernel_size[1])).to(device)
+        self.grad_bias = empty(out_channels).to(device)
 
     def __call__(self, input):
         return self.forward(input)
@@ -277,11 +283,6 @@ if __name__ == "__main__":
     # print(t.backward())
     # print(x)
 
-    # layers = Sequential(Relu(), Sigmoid())
-    # x = torch.ones((1, 4, 1)).to(device) * -1
-    # print(layers(x))
-    # print(x)
-
     # fold = torch.nn.Fold(output_size=(4, 5), kernel_size=(2, 2))
     # x = torch.ones(1, 2 * 2, 12)
     # print(fold(x))
@@ -342,5 +343,39 @@ if __name__ == "__main__":
     # cvt.backward(y)
     # param = cvt.param()
     # print(param[0][1].size())
+
+    in_channels = 3
+    out_channels = 3
+    kernel_size = 3
+    stride = 2
+    padding = 1
+    output_padding = 1
+    dilation = 1
+    bias_mode = True
+
+    layers = Sequential(Conv(in_channels=in_channels, out_channels=out_channels,
+                             kernel_size=kernel_size, stride=stride, padding=padding,
+                             dilation=dilation, bias_mode=bias_mode),
+                        Relu(),
+                        Conv(in_channels=in_channels, out_channels=out_channels,
+                             kernel_size=kernel_size, stride=stride, padding=padding,
+                             dilation=dilation, bias_mode=bias_mode),
+                        ConvTranspose(in_channels=in_channels, out_channels=out_channels,
+                                      kernel_size=kernel_size, stride=stride, padding=padding,
+                                      output_padding=output_padding, dilation=dilation,
+                                      bias_mode=bias_mode),
+                        Relu(),
+                        ConvTranspose(in_channels=in_channels, out_channels=out_channels,
+                                      kernel_size=kernel_size, stride=stride, padding=padding,
+                                      output_padding=output_padding, dilation=dilation,
+                                      bias_mode=bias_mode),
+                        Sigmoid()
+                        )
+
+    x = torch.randn((1, in_channels, 32, 32))
+    print(layers(x).size())
+    layers.backward(torch.ones_like(layers(x)))
+    torch.testing.assert_allclose(layers(x), layers(x))
+    # print(layers.param())
 
     print("end")
