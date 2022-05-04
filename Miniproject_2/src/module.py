@@ -78,18 +78,21 @@ class MSELoss(Module):
 
 
 class SGD(Module):
-    def __init__(self, layers, lr) -> None:
-        self.layers = layers
+    def __init__(self, parameters, lr) -> None:
+        self.parameters = parameters
         self.lr = lr
 
     def step(self):
-        self.layers.step(self.lr)
+        for p in self.parameters:
+            if p:
+                p[0][0].sub_(self.lr * p[0][1])
+                p[1][0].sub_(self.lr * p[1][1])
 
 
 class Sequential(Module):
     def __init__(self, *layers) -> None:
         self.layers = layers
-        self.parameters = None
+        self.parameters = self.param()
 
     def __call__(self, input):
         return self.forward(input)
@@ -110,9 +113,6 @@ class Sequential(Module):
         for m in self.layers:
             param_list += [m.param()]
         return param_list
-
-    def step(self):
-        for
 
 
 class Conv(Module):
@@ -190,10 +190,10 @@ class Conv(Module):
         grad_weight = grad_weight.sum(dim=3)
         grad_weight = grad_weight.view(batch_size, self.out_channels, self.in_channels, self.kernel_size[0],
                                        self.kernel_size[1])
-        self.grad_weight = grad_weight.sum(dim=0)
+        self.grad_weight.add_(grad_weight.sum(dim=0))
 
         # Computes grad_bias
-        self.grad_bias = grad_output.sum(dim=(0, 2, 3))
+        self.grad_bias.add_(grad_output.sum(dim=(0, 2, 3)))
 
         return grad_input
 
@@ -277,10 +277,10 @@ class ConvTranspose(Module):
         grad_weight = grad_weight.sum(dim=3)
         grad_weight = grad_weight.view(batch_size, self.in_channels, self.out_channels, self.kernel_size[0],
                                        self.kernel_size[1])
-        self.grad_weight = grad_weight.sum(dim=0)
+        self.grad_weight.add_(grad_weight.sum(dim=0))
 
         # Computes grad_bias
-        self.grad_bias = grad_output.sum(dim=(0, 2, 3))
+        self.grad_bias.add_(grad_output.sum(dim=(0, 2, 3)))
 
         return grad_input
 

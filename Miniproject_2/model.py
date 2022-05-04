@@ -21,7 +21,7 @@ class Model:
         self.model = denoiser.Denoiser()
         self.criterion = m.MSELoss()
         self.lr = 0.001
-        self.optimizer = m.SGD(lr=self.lr)
+        self.optimizer = m.SGD(self.model.param(), lr=self.lr)
         self.mini_batch_size = mini_batch_size
 
     def load_pretrained_model(self) -> None:
@@ -45,7 +45,7 @@ class Model:
                 self.criterion(output, train_target.narrow(0, b, self.mini_batch_size))
                 self.model.zero_grad()
                 self.model.backward(self.criterion.backward())
-                self.optimizer.step(self.model.param())
+                self.optimizer.step()
                 nb_step += 1
 
                 end = time.time()
