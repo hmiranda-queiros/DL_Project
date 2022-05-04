@@ -47,5 +47,5 @@ class Denoiser(m.Module):
         parameters = self.param()
         for p in parameters:
             if p:
-                p[0][1] = p[0][1] * 0
-                p[1][1] = p[1][1] * 0
+                p[0][1].zero_()
+                p[1][1].zero_()
