@@ -1,4 +1,5 @@
 import torch
+import math
 
 from torch import empty, cat, arange
 from torch.nn.functional import fold, unfold
@@ -50,7 +51,7 @@ class Sigmoid(Module):
 
     def forward(self, input):
         self.input = input.clone().detach()
-        return 1 / (1 + torch.exp(-input))
+        return 1 / (1 + -input.exp())
 
     def backward(self, grad_output):
         return grad_output * self.dsigma()
@@ -130,8 +131,23 @@ class Conv(Module):
         self.grad_weight = empty((out_channels, in_channels, self.kernel_size[0], self.kernel_size[1])).to(device)
         self.grad_bias = empty(out_channels).to(device)
 
+        self.initialize()
+
     def __call__(self, input):
         return self.forward(input)
+
+    def initialize(self):
+        n = self.in_channels
+        for k in self.kernel_size:
+            n *= k
+        stdv = 1. / math.sqrt(n)
+        # self.weight.uniform_(-stdv, stdv)
+        # self.bias.uniform_(-stdv, stdv)
+        self.weight.normal_()
+        self.bias.normal_()
+
+        self.grad_weight *= 0
+        self.grad_bias *= 0
 
     def forward(self, input):
         batch_size = input.size(0)
@@ -205,8 +221,23 @@ class ConvTranspose(Module):
         self.grad_weight = empty((in_channels, out_channels, self.kernel_size[0], self.kernel_size[1])).to(device)
         self.grad_bias = empty(out_channels).to(device)
 
+        self.initialize()
+
     def __call__(self, input):
         return self.forward(input)
+
+    def initialize(self):
+        n = self.in_channels
+        for k in self.kernel_size:
+            n *= k
+        stdv = 1. / math.sqrt(n)
+        # self.weight.uniform_(-stdv, stdv)
+        # self.bias.uniform_(-stdv, stdv)
+        self.weight.normal_()
+        self.bias.normal_()
+
+        self.grad_weight *= 0
+        self.grad_bias *= 0
 
     def forward(self, input):
         batch_size = input.size(0)
@@ -287,32 +318,35 @@ if __name__ == "__main__":
     # x = torch.ones(1, 2 * 2, 12)
     # print(fold(x))
 
-    # in_channels = 5
-    # out_channels = 2
-    # kernel_size = (5, 2)
-    # stride = 2
-    # padding = 2
-    # dilation = 2
-    # bias_mode = False
-    # conv = torch.nn.Conv2d(in_channels=in_channels, out_channels=out_channels,
-    #                        kernel_size=kernel_size, stride=stride, padding=padding,
-    #                        dilation=dilation, bias=bias_mode)
-    # cv = Conv(in_channels=in_channels, out_channels=out_channels,
-    #           kernel_size=kernel_size, stride=stride, padding=padding,
-    #           dilation=dilation, bias_mode=bias_mode)
-    # cv.weight = conv.weight
-    # cv.bias = conv.bias
-    # x = torch.randn((6, in_channels, 32, 32))
+    in_channels = 1
+    out_channels = 1
+    kernel_size = (3, 3)
+    stride = 1
+    padding = 0
+    dilation = 1
+    bias_mode = True
+    conv = torch.nn.Conv2d(in_channels=in_channels, out_channels=out_channels,
+                           kernel_size=kernel_size, stride=stride, padding=padding,
+                           dilation=dilation, bias=bias_mode, device=device)
+    cv = Conv(in_channels=in_channels, out_channels=out_channels,
+              kernel_size=kernel_size, stride=stride, padding=padding,
+              dilation=dilation, bias_mode=bias_mode)
+    cv.weight = conv.weight
+    cv.bias = conv.bias
+    # x = torch.randn((6, in_channels, 32, 32)).to(device)
     # output = cv(x)
     # expected = conv(x)
     # torch.testing.assert_allclose(output, expected)
     # print(cv(x).shape)
 
-    # x = torch.ones((6, in_channels, 32, 32))
-    # y = torch.ones_like(cv(x))
-    # cv.backward(y)
-    # param = cv.param()
-    # print(param[0][1].size())
+    cv.weight = torch.ones_like(cv.weight)
+    cv.bias = cv.bias * 0
+    x = torch.ones((1, in_channels, 5, 5)).to(device)
+    y = torch.ones_like(cv(x))
+    print(cv.backward(y).size())
+    print(cv.backward(y))
+    param = cv.param()
+    print(param[0][1].size())
 
     # in_channels = 2
     # out_channels = 4
@@ -344,40 +378,40 @@ if __name__ == "__main__":
     # param = cvt.param()
     # print(param[0][1].size())
 
-    in_channels = 3
-    out_channels = 3
-    kernel_size = 3
-    stride = 2
-    padding = 1
-    output_padding = 1
-    dilation = 1
-    bias_mode = True
-
-    layers = Sequential(Conv(in_channels=in_channels, out_channels=out_channels,
-                             kernel_size=kernel_size, stride=stride, padding=padding,
-                             dilation=dilation, bias_mode=bias_mode),
-                        Relu(),
-                        Conv(in_channels=in_channels, out_channels=out_channels,
-                             kernel_size=kernel_size, stride=stride, padding=padding,
-                             dilation=dilation, bias_mode=bias_mode),
-                        Relu(),
-                        ConvTranspose(in_channels=in_channels, out_channels=out_channels,
-                                      kernel_size=kernel_size, stride=stride, padding=padding,
-                                      output_padding=output_padding, dilation=dilation,
-                                      bias_mode=bias_mode),
-                        Relu(),
-                        ConvTranspose(in_channels=in_channels, out_channels=out_channels,
-                                      kernel_size=kernel_size, stride=stride, padding=padding,
-                                      output_padding=output_padding, dilation=dilation,
-                                      bias_mode=bias_mode),
-                        Sigmoid()
-                        )
-
-    x = torch.ones((1, in_channels, 5, 5)).to(device)
-    print(layers(x).size())
-    layers.backward(torch.ones_like(layers(x)))
-    torch.testing.assert_allclose(layers(x), layers(x))
-    print(layers(x))
-    print(layers.param()[0])
+    # in_channels = 3
+    # out_channels = 3
+    # kernel_size = 3
+    # stride = 2
+    # padding = 1
+    # output_padding = 1
+    # dilation = 1
+    # bias_mode = True
+    #
+    # layers = Sequential(Conv(in_channels=in_channels, out_channels=out_channels,
+    #                          kernel_size=kernel_size, stride=stride, padding=padding,
+    #                          dilation=dilation, bias_mode=bias_mode),
+    #                     Relu(),
+    #                     Conv(in_channels=in_channels, out_channels=out_channels,
+    #                          kernel_size=kernel_size, stride=stride, padding=padding,
+    #                          dilation=dilation, bias_mode=bias_mode),
+    #                     Relu(),
+    #                     ConvTranspose(in_channels=in_channels, out_channels=out_channels,
+    #                                   kernel_size=kernel_size, stride=stride, padding=padding,
+    #                                   output_padding=output_padding, dilation=dilation,
+    #                                   bias_mode=bias_mode),
+    #                     Relu(),
+    #                     ConvTranspose(in_channels=in_channels, out_channels=out_channels,
+    #                                   kernel_size=kernel_size, stride=stride, padding=padding,
+    #                                   output_padding=output_padding, dilation=dilation,
+    #                                   bias_mode=bias_mode),
+    #                     Sigmoid()
+    #                     )
+    #
+    # x = torch.randn((1, in_channels, 32, 32)).to(device)
+    # print(layers(x).size())
+    # layers.backward(torch.ones_like(layers(x)))
+    # torch.testing.assert_allclose(layers(x), layers(x))
+    # print(layers(x))
+    # print(layers.param()[0])
 
     print("end")
