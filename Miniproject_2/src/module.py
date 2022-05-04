@@ -97,10 +97,10 @@ class Sequential(Module):
         return self.forward(input)
 
     def forward(self, input):
-        y = input.clone().detach()
+        x = input.clone().detach()
         for m in self.layers:
-            y = m(y)
-        return y
+            x = m(x)
+        return x
 
     def backward(self, grad_output):
         d = grad_output.clone().detach()
@@ -360,6 +360,7 @@ if __name__ == "__main__":
                         Conv(in_channels=in_channels, out_channels=out_channels,
                              kernel_size=kernel_size, stride=stride, padding=padding,
                              dilation=dilation, bias_mode=bias_mode),
+                        Relu(),
                         ConvTranspose(in_channels=in_channels, out_channels=out_channels,
                                       kernel_size=kernel_size, stride=stride, padding=padding,
                                       output_padding=output_padding, dilation=dilation,
@@ -372,10 +373,11 @@ if __name__ == "__main__":
                         Sigmoid()
                         )
 
-    x = torch.randn((1, in_channels, 32, 32))
+    x = torch.ones((1, in_channels, 5, 5)).to(device)
     print(layers(x).size())
     layers.backward(torch.ones_like(layers(x)))
     torch.testing.assert_allclose(layers(x), layers(x))
-    # print(layers.param())
+    print(layers(x))
+    print(layers.param()[0])
 
     print("end")

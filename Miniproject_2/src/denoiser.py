@@ -18,6 +18,7 @@ class Denoiser(m.Module):
                                    m.Conv(in_channels=nb_channels, out_channels=nb_channels,
                                           kernel_size=kernel_size, stride=stride, padding=padding,
                                           dilation=dilation, bias_mode=bias_mode),
+                                   m.Relu(),
                                    m.ConvTranspose(in_channels=nb_channels, out_channels=nb_channels,
                                                    kernel_size=kernel_size, stride=stride, padding=padding,
                                                    output_padding=output_padding, dilation=dilation,
