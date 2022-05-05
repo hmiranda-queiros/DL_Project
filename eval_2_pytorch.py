@@ -1,4 +1,4 @@
-import Miniproject_1
+import Miniproject_2_pytorch
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
@@ -32,7 +32,7 @@ def main():
     noisy_imgs.div_(255)
     clean_imgs.div_(255)
 
-    denoiser = Miniproject_1.Model(mini_batch_size)
+    denoiser = Miniproject_2_pytorch.Model(mini_batch_size)
 
     print(f"Device used : {noisy_imgs_1.device}")
     print(f"Input shape : {noisy_imgs_1.shape}")

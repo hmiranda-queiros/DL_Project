@@ -43,6 +43,9 @@ def main():
         denoiser.load_pretrained_model()
 
     else:
+        output = denoiser.predict(noisy_imgs)
+        noise_db = psnr(output, clean_imgs).item()
+        print(f"PSNR at step 0 of training : {noise_db:.2f}")
         # Training
         denoiser.train(noisy_imgs_1, noisy_imgs_2, num_epochs, noisy_imgs, clean_imgs)
 
@@ -86,5 +89,5 @@ if __name__ == "__main__":
     load = False
     save = False
     num_epochs = 10
-    mini_batch_size = 1
+    mini_batch_size = 50
     main()
