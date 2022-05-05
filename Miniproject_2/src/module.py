@@ -187,7 +187,7 @@ class Conv(Module):
         unfolded = unfold(self.input, kernel_size=self.kernel_size, dilation=self.dilation,
                           padding=self.padding, stride=self.stride)
         grad_weight = unfolded * grad_output.view(self.out_channels, batch_size, 1, -1)
-        grad_weight = grad_weight.sum(dim=3)
+        grad_weight = grad_weight.sum(dim=3).permute(1, 0, 2)
         grad_weight = grad_weight.view(batch_size, self.out_channels, self.in_channels, self.kernel_size[0],
                                        self.kernel_size[1])
         self.grad_weight.add_(grad_weight.sum(dim=0))
@@ -271,10 +271,11 @@ class ConvTranspose(Module):
         W_in = self.input.size(3)
         wxb = self.input.view(batch_size, self.in_channels, H_in * W_in)
         grad_output_unfolded = unfold(grad_output, kernel_size=self.kernel_size, dilation=self.dilation,
-                                      padding=self.padding, stride=self.stride)
+                                      padding=self.padding, stride=self.stride).permute(1, 0, 2)
         grad_weight = wxb * grad_output_unfolded.view(self.out_channels * self.kernel_size[0] * self.kernel_size[1],
                                                       batch_size, 1, -1)
         grad_weight = grad_weight.sum(dim=3)
+        grad_weight = grad_weight.permute(1, 0, 2).transpose(1, 2)
         grad_weight = grad_weight.view(batch_size, self.in_channels, self.out_channels, self.kernel_size[0],
                                        self.kernel_size[1])
         self.grad_weight.add_(grad_weight.sum(dim=0))
@@ -295,6 +296,9 @@ if __name__ == "__main__":
     # print(t(x))
     # print(t.backward(g))
     # print(x)
+    # x = torch.randn((10, 3, 32, 32)).to(device)
+    # test = torch.nn.ReLU()
+    # torch.testing.assert_allclose(t(x), test(x))
 
     # t = Sigmoid()
     # x = torch.ones((1, 4, 1)).to(device) * 10000
@@ -302,6 +306,15 @@ if __name__ == "__main__":
     # print(t(x))
     # print(t.backward(g))
     # print(x)
+    # x = torch.randn((10, 3, 32, 32)).to(device)
+    # test = torch.nn.Sigmoid()
+    # torch.testing.assert_allclose(t(x), test(x))
+
+    # loss = torch.nn.MSELoss()
+    # l = MSELoss()
+    # x = torch.randn(10, 3, 32, 32)
+    # target = torch.randn(10, 3, 32, 32)
+    # torch.testing.assert_allclose(loss(x, target), l(x, target))
 
     # t = MSELoss()
     # x = torch.ones((1 ,4, 1)).to(device) * 0
@@ -314,12 +327,12 @@ if __name__ == "__main__":
     # x = torch.ones(1, 2 * 2, 12)
     # print(fold(x))
 
-    # in_channels = 2
+    # in_channels = 4
     # out_channels = 2
-    # kernel_size = 3
-    # stride = 1
-    # padding = 0
-    # dilation = 1
+    # kernel_size = (3, 4)
+    # stride = 2
+    # padding = 2
+    # dilation = 3
     # bias_mode = True
     # conv = torch.nn.Conv2d(in_channels=in_channels, out_channels=out_channels,
     #                        kernel_size=kernel_size, stride=stride, padding=padding,
@@ -327,61 +340,67 @@ if __name__ == "__main__":
     # cv = Conv(in_channels=in_channels, out_channels=out_channels,
     #           kernel_size=kernel_size, stride=stride, padding=padding,
     #           dilation=dilation, bias_mode=bias_mode)
-    # cv.weight = conv.weight
-    # cv.bias = conv.bias
-    # x = torch.randn((6, in_channels, 32, 32)).to(device)
-    # output = cv(x)
-    # expected = conv(x)
-    # torch.testing.assert_allclose(output, expected)
-    # # print(cv(x).shape)
+    # cv.weight = conv.weight.clone().detach()
+    # cv.bias = conv.bias.clone().detach()
     #
-    # cv.weight = torch.ones_like(cv.weight)
-    # x = torch.ones((2, in_channels, 5, 5)).to(device)
-    # y = torch.ones_like(cv(x))
-    # # print(y)
-    # cv.backward(y)
-    # # print(cv.grad_weight)
-    # print(y.size())
-    # print(cv.grad_bias.size())
-    # print(cv.bias.size())
-    # print(conv.bias.size())
-    # print(cv.grad_bias)
+    # x = torch.randn((4, in_channels, 32, 32)).to(device)
+    # x_auto = x.clone().detach()
+    # x_auto.requires_grad = True
+    #
+    # output_auto = conv(x_auto)
+    # output_auto.retain_grad()
+    # output = cv(x)
+    # loss_auto = output_auto.sum()
+    # loss = output.sum()
+    #
+    # torch.testing.assert_allclose(output, output_auto)
+    # torch.testing.assert_allclose(loss, loss_auto)
+    #
+    # loss_auto.backward()
+    # output_grad = output_auto.grad.clone().detach()
+    # x_grad = cv.backward(output_grad)
+    # torch.testing.assert_allclose(x_grad, x_auto.grad)
+    # torch.testing.assert_allclose(cv.grad_weight, conv.weight.grad)
+    # torch.testing.assert_allclose(cv.grad_bias, conv.bias.grad)
 
     # in_channels = 2
-    # out_channels = 2
-    # kernel_size = (3, 3)
-    # stride = 1
+    # out_channels = 3
+    # kernel_size = (4, 2)
+    # stride = 2
     # padding = 0
-    # output_padding = 0
-    # dilation = 1
+    # output_padding = 1
+    # dilation = 2
     # bias_mode = True
     # convtrans = torch.nn.ConvTranspose2d(in_channels=in_channels, out_channels=out_channels,
     #                                      kernel_size=kernel_size, stride=stride, padding=padding,
     #                                      output_padding=output_padding, dilation=dilation,
-    #                                      bias=bias_mode)
+    #                                      bias=bias_mode, device=device)
     # cvt = ConvTranspose(in_channels=in_channels, out_channels=out_channels,
     #                     kernel_size=kernel_size, stride=stride, padding=padding,
     #                     output_padding=output_padding, dilation=dilation,
     #                     bias_mode=bias_mode)
-    # cvt.weight = convtrans.weight
-    # cvt.bias = convtrans.bias
-    # x = torch.randn((6, in_channels, 32, 32))
-    # expected = convtrans(x)
-    # output = cvt(x)
-    # torch.testing.assert_allclose(output, expected)
-    # print(cvt(x).shape)
+    # cvt.weight = convtrans.weight.clone().detach()
+    # cvt.bias = convtrans.bias.clone().detach()
     #
-    # cvt.weight = torch.ones_like(cvt.weight)
-    # x = torch.ones((2, in_channels, 2, 2))
-    # y = torch.ones_like(cvt(x))
-    # cvt.backward(y)
-    # param = cvt.param()
-    # print(param[0][1].size())
-    # print(y.size())
-    # print(cvt.grad_bias.size())
-    # print(cvt.bias.size())
-    # print(convtrans.bias.size())
-    # print(cvt.grad_bias)
+    # x = torch.randn((3, in_channels, 32, 32)).to(device)
+    # x_auto = x.clone().detach()
+    # x_auto.requires_grad = True
+    #
+    # output_auto = convtrans(x_auto)
+    # output_auto.retain_grad()
+    # output = cvt(x)
+    # loss_auto = output_auto.sum()
+    # loss = output.sum()
+    #
+    # torch.testing.assert_allclose(output, output_auto)
+    # torch.testing.assert_allclose(loss, loss_auto)
+    #
+    # loss_auto.backward()
+    # output_grad = output_auto.grad.clone().detach()
+    # x_grad = cvt.backward(output_grad)
+    # torch.testing.assert_allclose(x_grad, x_auto.grad)
+    # torch.testing.assert_allclose(cvt.grad_weight, convtrans.weight.grad)
+    # torch.testing.assert_allclose(cvt.grad_bias, convtrans.bias.grad)
 
     # in_channels = 3
     # out_channels = 3
