@@ -5,7 +5,7 @@ from torch import empty, cat, arange
 from torch.nn.functional import fold, unfold
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-torch.set_grad_enabled(False)
+torch.set_grad_enabled(True)
 
 
 class Module(object):
@@ -186,7 +186,7 @@ class Conv(Module):
         # Computes grad_weight
         unfolded = unfold(self.input, kernel_size=self.kernel_size, dilation=self.dilation,
                           padding=self.padding, stride=self.stride)
-        grad_weight = unfolded * grad_output.view(self.out_channels, batch_size, 1, -1)
+        grad_weight = unfolded * grad_output.permute(1, 0, 2, 3).view(self.out_channels, batch_size, 1, -1)
         grad_weight = grad_weight.sum(dim=3).permute(1, 0, 2)
         grad_weight = grad_weight.view(batch_size, self.out_channels, self.in_channels, self.kernel_size[0],
                                        self.kernel_size[1])
@@ -343,7 +343,7 @@ if __name__ == "__main__":
     # cv.weight = conv.weight.clone().detach()
     # cv.bias = conv.bias.clone().detach()
     #
-    # x = torch.randn((4, in_channels, 32, 32)).to(device)
+    # x = torch.randn((10, in_channels, 32, 32)).to(device)
     # x_auto = x.clone().detach()
     # x_auto.requires_grad = True
     #
@@ -355,7 +355,7 @@ if __name__ == "__main__":
     #
     # torch.testing.assert_allclose(output, output_auto)
     # torch.testing.assert_allclose(loss, loss_auto)
-    #
+    # 
     # loss_auto.backward()
     # output_grad = output_auto.grad.clone().detach()
     # x_grad = cv.backward(output_grad)
