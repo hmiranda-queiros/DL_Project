@@ -106,7 +106,7 @@ class Sequential(Module):
         return x
 
     def backward(self, grad_output):
-        d = grad_output.clone().detach()
+        d = grad_output
         for m in reversed(self.layers):
             d = m.backward(d)
 
@@ -160,7 +160,7 @@ class Conv2d(Module):
 
         self.input = input.clone().detach()
 
-        unfolded = unfold(self.input, kernel_size=self.kernel_size, dilation=self.dilation,
+        unfolded = unfold(input, kernel_size=self.kernel_size, dilation=self.dilation,
                           padding=self.padding, stride=self.stride)
         wxb = self.weight.view(self.out_channels, -1) @ unfolded
         if self.bias_mode:
