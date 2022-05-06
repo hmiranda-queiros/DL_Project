@@ -2,6 +2,7 @@ import Miniproject_2
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
+import pickle
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 torch.set_grad_enabled(False)
@@ -62,7 +63,11 @@ def main():
 
     if save:
         # Save the model
-        torch.save(denoiser.model.state_dict(), './Miniproject_1/bestmodel.pth')
+        filename = 'bestmodel.pth'
+        outfile = open(filename, 'wb')
+        parameters = denoiser.model.param()
+        pickle.dump(parameters, outfile)
+        outfile.close()
 
     # Plots the result
     images_clean = clean_imgs[:5].mul(255).to("cpu").numpy()
@@ -88,6 +93,6 @@ def main():
 if __name__ == "__main__":
     load = False
     save = False
-    num_epochs = 5
+    num_epochs = 1
     mini_batch_size = 50
     main()

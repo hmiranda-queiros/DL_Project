@@ -1,5 +1,6 @@
 import torch
 import time
+import pickle
 
 from .src import module as m
 from .src import denoiser
@@ -26,7 +27,12 @@ class Model:
 
     def load_pretrained_model(self) -> None:
         # This loads the parameters saved in bestmodel.pth into the model
-        pass
+        filename = 'bestmodel.pth'
+        infile = open(filename, 'rb')
+        parameters = pickle.load(infile)
+        infile.close()
+
+        self.model.load(parameters)
 
     def train(self, train_input, train_target, num_epochs, test_input, test_target) -> None:
         #: train_input : tensor of size (N, C, H, W) containing a noisy version of the images.

@@ -49,3 +49,10 @@ class Denoiser(m.Module):
             if p:
                 p[0][1].zero_()
                 p[1][1].zero_()
+
+    def load(self, parameters):
+        parameters_old = self.param()
+        for i in range(len(parameters)):
+            if parameters[i]:
+                parameters_old[i][0][0].zero_().add_(parameters[i][0][0])
+                parameters_old[i][1][0].zero_().add_(parameters[i][1][0])
