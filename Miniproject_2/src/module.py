@@ -4,7 +4,7 @@ from torch import empty
 from torch.nn.functional import fold, unfold
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-torch.set_grad_enabled(True)
+torch.set_grad_enabled(False)
 
 
 class Module(object):
