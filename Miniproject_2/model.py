@@ -19,7 +19,7 @@ class Model:
     def __init__(self, mini_batch_size) -> None:
         # instantiate model + optimizer + loss function + any other stuff you need
         self.model = denoiser.Denoiser()
-        self.criterion = m.MSELoss()
+        self.criterion = m.MSE()
         self.lr = 0.01
         self.optimizer = m.SGD(self.model.param(), lr=self.lr)
         self.mini_batch_size = mini_batch_size

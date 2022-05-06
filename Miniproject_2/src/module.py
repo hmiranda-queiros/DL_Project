@@ -1,11 +1,10 @@
 import torch
-import math
 
-from torch import empty, cat, arange
+from torch import empty
 from torch.nn.functional import fold, unfold
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-torch.set_grad_enabled(False)
+torch.set_grad_enabled(True)
 
 
 class Module(object):
@@ -19,7 +18,7 @@ class Module(object):
         return []
 
 
-class Relu(Module):
+class ReLU(Module):
     def __init__(self) -> None:
         self.input = None
 
@@ -60,7 +59,7 @@ class Sigmoid(Module):
         return self.forward(self.input) * (1 - self.forward(self.input))
 
 
-class MSELoss(Module):
+class MSE(Module):
     def __init__(self) -> None:
         self.input = None
         self.target = None
@@ -118,15 +117,15 @@ class Sequential(Module):
         return param_list
 
 
-class Conv(Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, bias_mode=True) -> None:
+class Conv2d(Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, bias=True) -> None:
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = [kernel_size, (kernel_size, kernel_size)][type(kernel_size) == int]
         self.stride = [stride, (stride, stride)][type(stride) == int]
         self.dilation = [dilation, (dilation, dilation)][type(dilation) == int]
         self.padding = [padding, (padding, padding)][type(padding) == int]
-        self.bias_mode = bias_mode
+        self.bias_mode = bias
 
         self.input = None
         self.weight = empty((out_channels, in_channels, self.kernel_size[0], self.kernel_size[1])).to(device)
@@ -143,7 +142,7 @@ class Conv(Module):
         n = self.in_channels
         for k in self.kernel_size:
             n *= k
-        std = 1 / math.sqrt(n)
+        std = n ** -.5
         self.weight.uniform_(-std, std)
         self.bias.uniform_(-std, std)
 
@@ -175,9 +174,9 @@ class Conv(Module):
         batch_size = grad_output.size(0)
 
         # Computes grad_input
-        cvt = ConvTranspose(in_channels=self.out_channels, out_channels=self.in_channels,
-                            kernel_size=self.kernel_size, stride=self.stride, padding=self.padding,
-                            output_padding=0, dilation=self.dilation, bias_mode=False)
+        cvt = TransposeConv2d(in_channels=self.out_channels, out_channels=self.in_channels,
+                              kernel_size=self.kernel_size, stride=self.stride, padding=self.padding,
+                              output_padding=0, dilation=self.dilation, bias=False)
         cvt.weight = self.weight
         grad_input = cvt(grad_output)
 
@@ -195,8 +194,9 @@ class Conv(Module):
                                        self.kernel_size[1])
         self.grad_weight.add_(grad_weight.sum(dim=0))
 
-        # Computes grad_bias
-        self.grad_bias.add_(grad_output.sum(dim=(0, 2, 3)))
+        if self.bias_mode:
+            # Computes grad_bias
+            self.grad_bias.add_(grad_output.sum(dim=(0, 2, 3)))
 
         return grad_input
 
@@ -204,9 +204,9 @@ class Conv(Module):
         return [[self.weight, self.grad_weight], [self.bias, self.grad_bias]]
 
 
-class ConvTranspose(Module):
+class TransposeConv2d(Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, output_padding=0,
-                 dilation=1, bias_mode=True) -> None:
+                 dilation=1, bias=True) -> None:
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = [kernel_size, (kernel_size, kernel_size)][type(kernel_size) == int]
@@ -214,7 +214,7 @@ class ConvTranspose(Module):
         self.dilation = [dilation, (dilation, dilation)][type(dilation) == int]
         self.padding = [padding, (padding, padding)][type(padding) == int]
         self.output_padding = [output_padding, (output_padding, output_padding)][type(output_padding) == int]
-        self.bias_mode = bias_mode
+        self.bias_mode = bias
 
         self.input = None
         self.weight = empty((in_channels, out_channels, self.kernel_size[0], self.kernel_size[1])).to(device)
@@ -231,7 +231,7 @@ class ConvTranspose(Module):
         n = self.out_channels
         for k in self.kernel_size:
             n *= k
-        std = 1 / math.sqrt(n)
+        std = n ** -.5
         self.weight.uniform_(-std, std)
         self.bias.uniform_(-std, std)
 
@@ -263,9 +263,9 @@ class ConvTranspose(Module):
         batch_size = grad_output.size(0)
 
         # Computes grad_input
-        cv = Conv(in_channels=self.out_channels, out_channels=self.in_channels,
-                  kernel_size=self.kernel_size, stride=self.stride, padding=self.padding,
-                  dilation=self.dilation, bias_mode=False)
+        cv = Conv2d(in_channels=self.out_channels, out_channels=self.in_channels,
+                    kernel_size=self.kernel_size, stride=self.stride, padding=self.padding,
+                    dilation=self.dilation, bias=False)
         cv.weight = self.weight
         grad_input = cv(grad_output)
 
@@ -283,8 +283,9 @@ class ConvTranspose(Module):
                                        self.kernel_size[1])
         self.grad_weight.add_(grad_weight.sum(dim=0))
 
-        # Computes grad_bias
-        self.grad_bias.add_(grad_output.sum(dim=(0, 2, 3)))
+        if self.bias_mode:
+            # Computes grad_bias
+            self.grad_bias.add_(grad_output.sum(dim=(0, 2, 3)))
 
         return grad_input
 
@@ -293,7 +294,7 @@ class ConvTranspose(Module):
 
 
 if __name__ == "__main__":
-    # r = Relu()
+    # r = ReLU()
     # relu = torch.nn.ReLU()
     # x = torch.randn((10, 5, 32, 32)).to(device)
     # x_auto = x.clone().detach()
@@ -332,9 +333,9 @@ if __name__ == "__main__":
     # output_grad = output_auto.grad.clone().detach()
     # x_grad = s.backward(output_grad)
     # torch.testing.assert_allclose(x_grad, x_auto.grad)
-
+    #
     # loss = torch.nn.MSELoss()
-    # l = MSELoss()
+    # l = MSE()
     # x = torch.randn((10, 5, 32, 32)).to(device)
     # x_auto = x.clone().detach()
     # x_auto.requires_grad = True
@@ -348,24 +349,21 @@ if __name__ == "__main__":
     # output_auto.backward()
     # x_grad = l.backward()
     # torch.testing.assert_allclose(x_grad, x_auto.grad)
-
-    # fold = torch.nn.Fold(output_size=(4, 5), kernel_size=(2, 2))
-    # x = torch.ones(1, 2 * 2, 12)
-    # print(fold(x))
-
+    #
+    #
     # in_channels = 4
     # out_channels = 2
     # kernel_size = (3, 4)
     # stride = 2
     # padding = 2
     # dilation = 3
-    # bias_mode = True
+    # bias = True
     # conv = torch.nn.Conv2d(in_channels=in_channels, out_channels=out_channels,
     #                        kernel_size=kernel_size, stride=stride, padding=padding,
-    #                        dilation=dilation, bias=bias_mode, device=device)
-    # cv = Conv(in_channels=in_channels, out_channels=out_channels,
-    #           kernel_size=kernel_size, stride=stride, padding=padding,
-    #           dilation=dilation, bias_mode=bias_mode)
+    #                        dilation=dilation, bias=bias, device=device)
+    # cv = Conv2d(in_channels=in_channels, out_channels=out_channels,
+    #             kernel_size=kernel_size, stride=stride, padding=padding,
+    #             dilation=dilation, bias=bias)
     # cv.weight = conv.weight.clone().detach()
     # cv.bias = conv.bias.clone().detach()
     #
@@ -388,23 +386,23 @@ if __name__ == "__main__":
     # torch.testing.assert_allclose(x_grad, x_auto.grad)
     # torch.testing.assert_allclose(cv.grad_weight, conv.weight.grad)
     # torch.testing.assert_allclose(cv.grad_bias, conv.bias.grad)
-
+    #
     # in_channels = 2
     # out_channels = 3
     # kernel_size = (4, 2)
     # stride = 2
-    # padding = 0
+    # padding = 1
     # output_padding = 1
     # dilation = 2
-    # bias_mode = True
+    # bias = True
     # convtrans = torch.nn.ConvTranspose2d(in_channels=in_channels, out_channels=out_channels,
     #                                      kernel_size=kernel_size, stride=stride, padding=padding,
     #                                      output_padding=output_padding, dilation=dilation,
-    #                                      bias=bias_mode, device=device)
-    # cvt = ConvTranspose(in_channels=in_channels, out_channels=out_channels,
-    #                     kernel_size=kernel_size, stride=stride, padding=padding,
-    #                     output_padding=output_padding, dilation=dilation,
-    #                     bias_mode=bias_mode)
+    #                                      bias=bias, device=device)
+    # cvt = TransposeConv2d(in_channels=in_channels, out_channels=out_channels,
+    #                       kernel_size=kernel_size, stride=stride, padding=padding,
+    #                       output_padding=output_padding, dilation=dilation,
+    #                       bias=bias)
     # cvt.weight = convtrans.weight.clone().detach()
     # cvt.bias = convtrans.bias.clone().detach()
     #
@@ -427,7 +425,7 @@ if __name__ == "__main__":
     # torch.testing.assert_allclose(x_grad, x_auto.grad)
     # torch.testing.assert_allclose(cvt.grad_weight, convtrans.weight.grad)
     # torch.testing.assert_allclose(cvt.grad_bias, convtrans.bias.grad)
-
+    #
     # in_channels = 3
     # out_channels = 3
     # kernel_size = 3
@@ -435,25 +433,25 @@ if __name__ == "__main__":
     # padding = 1
     # output_padding = 1
     # dilation = 1
-    # bias_mode = True
+    # bias = True
     #
-    # layers = Sequential(Conv(in_channels=in_channels, out_channels=out_channels,
-    #                          kernel_size=kernel_size, stride=stride, padding=padding,
-    #                          dilation=dilation, bias_mode=bias_mode),
-    #                     Relu(),
-    #                     Conv(in_channels=in_channels, out_channels=out_channels,
-    #                          kernel_size=kernel_size, stride=stride, padding=padding,
-    #                          dilation=dilation, bias_mode=bias_mode),
-    #                     Relu(),
-    #                     ConvTranspose(in_channels=in_channels, out_channels=out_channels,
-    #                                   kernel_size=kernel_size, stride=stride, padding=padding,
-    #                                   output_padding=output_padding, dilation=dilation,
-    #                                   bias_mode=bias_mode),
-    #                     Relu(),
-    #                     ConvTranspose(in_channels=in_channels, out_channels=out_channels,
-    #                                   kernel_size=kernel_size, stride=stride, padding=padding,
-    #                                   output_padding=output_padding, dilation=dilation,
-    #                                   bias_mode=bias_mode),
+    # layers = Sequential(Conv2d(in_channels=in_channels, out_channels=out_channels,
+    #                            kernel_size=kernel_size, stride=stride, padding=padding,
+    #                            dilation=dilation, bias=bias),
+    #                     ReLU(),
+    #                     Conv2d(in_channels=in_channels, out_channels=out_channels,
+    #                            kernel_size=kernel_size, stride=stride, padding=padding,
+    #                            dilation=dilation, bias=bias),
+    #                     ReLU(),
+    #                     TransposeConv2d(in_channels=in_channels, out_channels=out_channels,
+    #                                     kernel_size=kernel_size, stride=stride, padding=padding,
+    #                                     output_padding=output_padding, dilation=dilation,
+    #                                     bias=bias),
+    #                     ReLU(),
+    #                     TransposeConv2d(in_channels=in_channels, out_channels=out_channels,
+    #                                     kernel_size=kernel_size, stride=stride, padding=padding,
+    #                                     output_padding=output_padding, dilation=dilation,
+    #                                     bias=bias),
     #                     Sigmoid()
     #                     )
     #

@@ -11,25 +11,25 @@ class Denoiser(nn.Module):
         padding = 1
         output_padding = 1
         dilation = 1
-        bias_mode = True
+        bias = True
 
         self.layers = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=nb_channels,
                                               kernel_size=kernel_size, stride=stride, padding=padding,
-                                              dilation=dilation, bias=bias_mode),
+                                              dilation=dilation, bias=bias),
                                     nn.ReLU(),
                                     nn.Conv2d(in_channels=nb_channels, out_channels=nb_channels,
                                               kernel_size=kernel_size, stride=stride, padding=padding,
-                                              dilation=dilation, bias=bias_mode),
+                                              dilation=dilation, bias=bias),
                                     nn.ReLU(),
                                     nn.ConvTranspose2d(in_channels=nb_channels, out_channels=nb_channels,
                                                        kernel_size=kernel_size, stride=stride, padding=padding,
                                                        output_padding=output_padding, dilation=dilation,
-                                                       bias=bias_mode),
+                                                       bias=bias),
                                     nn.ReLU(),
                                     nn.ConvTranspose2d(in_channels=nb_channels, out_channels=3,
                                                        kernel_size=kernel_size, stride=stride, padding=padding,
                                                        output_padding=output_padding, dilation=dilation,
-                                                       bias=bias_mode),
+                                                       bias=bias),
                                     nn.Sigmoid()
                                     )
 

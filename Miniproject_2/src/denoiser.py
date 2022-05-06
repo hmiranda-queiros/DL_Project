@@ -9,25 +9,25 @@ class Denoiser(m.Module):
         padding = 1
         output_padding = 1
         dilation = 1
-        bias_mode = True
+        bias = True
 
-        self.layers = m.Sequential(m.Conv(in_channels=3, out_channels=nb_channels,
-                                          kernel_size=kernel_size, stride=stride, padding=padding,
-                                          dilation=dilation, bias_mode=bias_mode),
-                                   m.Relu(),
-                                   m.Conv(in_channels=nb_channels, out_channels=nb_channels,
-                                          kernel_size=kernel_size, stride=stride, padding=padding,
-                                          dilation=dilation, bias_mode=bias_mode),
-                                   m.Relu(),
-                                   m.ConvTranspose(in_channels=nb_channels, out_channels=nb_channels,
-                                                   kernel_size=kernel_size, stride=stride, padding=padding,
-                                                   output_padding=output_padding, dilation=dilation,
-                                                   bias_mode=bias_mode),
-                                   m.Relu(),
-                                   m.ConvTranspose(in_channels=nb_channels, out_channels=3,
-                                                   kernel_size=kernel_size, stride=stride, padding=padding,
-                                                   output_padding=output_padding, dilation=dilation,
-                                                   bias_mode=bias_mode),
+        self.layers = m.Sequential(m.Conv2d(in_channels=3, out_channels=nb_channels,
+                                            kernel_size=kernel_size, stride=stride, padding=padding,
+                                            dilation=dilation, bias=bias),
+                                   m.ReLU(),
+                                   m.Conv2d(in_channels=nb_channels, out_channels=nb_channels,
+                                            kernel_size=kernel_size, stride=stride, padding=padding,
+                                            dilation=dilation, bias=bias),
+                                   m.ReLU(),
+                                   m.TransposeConv2d(in_channels=nb_channels, out_channels=nb_channels,
+                                                     kernel_size=kernel_size, stride=stride, padding=padding,
+                                                     output_padding=output_padding, dilation=dilation,
+                                                     bias=bias),
+                                   m.ReLU(),
+                                   m.TransposeConv2d(in_channels=nb_channels, out_channels=3,
+                                                     kernel_size=kernel_size, stride=stride, padding=padding,
+                                                     output_padding=output_padding, dilation=dilation,
+                                                     bias=bias),
                                    m.Sigmoid()
                                    )
 
