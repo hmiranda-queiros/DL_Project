@@ -109,6 +109,7 @@ class Sequential(Module):
         d = grad_output
         for m in reversed(self.layers):
             d = m.backward(d)
+        return d
 
     def param(self):
         param_list = []
@@ -313,7 +314,7 @@ if __name__ == "__main__":
     # output_grad = output_auto.grad.clone().detach()
     # x_grad = r.backward(output_grad)
     # torch.testing.assert_allclose(x_grad, x_auto.grad)
-
+    #
     # sigmo = torch.nn.Sigmoid()
     # s = Sigmoid()
     # x = torch.randn((10, 5, 32, 32)).to(device)
@@ -350,13 +351,12 @@ if __name__ == "__main__":
     # x_grad = l.backward()
     # torch.testing.assert_allclose(x_grad, x_auto.grad)
     #
-    #
-    # in_channels = 4
-    # out_channels = 2
+    # in_channels = 8
+    # out_channels = 6
     # kernel_size = (3, 4)
-    # stride = 2
-    # padding = 2
-    # dilation = 3
+    # stride = 3
+    # padding = 3
+    # dilation = 4
     # bias = True
     # conv = torch.nn.Conv2d(in_channels=in_channels, out_channels=out_channels,
     #                        kernel_size=kernel_size, stride=stride, padding=padding,
@@ -367,7 +367,7 @@ if __name__ == "__main__":
     # cv.weight = conv.weight.clone().detach()
     # cv.bias = conv.bias.clone().detach()
     #
-    # x = torch.randn((10, in_channels, 32, 32)).to(device)
+    # x = torch.randn((50, in_channels, 32, 32)).to(device)
     # x_auto = x.clone().detach()
     # x_auto.requires_grad = True
     #
@@ -387,11 +387,11 @@ if __name__ == "__main__":
     # torch.testing.assert_allclose(cv.grad_weight, conv.weight.grad)
     # torch.testing.assert_allclose(cv.grad_bias, conv.bias.grad)
     #
-    # in_channels = 2
-    # out_channels = 3
+    # in_channels = 10
+    # out_channels = 10
     # kernel_size = (4, 2)
-    # stride = 2
-    # padding = 1
+    # stride = 4
+    # padding = 2
     # output_padding = 1
     # dilation = 2
     # bias = True
@@ -426,8 +426,7 @@ if __name__ == "__main__":
     # torch.testing.assert_allclose(cvt.grad_weight, convtrans.weight.grad)
     # torch.testing.assert_allclose(cvt.grad_bias, convtrans.bias.grad)
     #
-    # in_channels = 3
-    # out_channels = 3
+    # nb_channels = 9
     # kernel_size = 3
     # stride = 2
     # padding = 1
@@ -435,32 +434,72 @@ if __name__ == "__main__":
     # dilation = 1
     # bias = True
     #
-    # layers = Sequential(Conv2d(in_channels=in_channels, out_channels=out_channels,
-    #                            kernel_size=kernel_size, stride=stride, padding=padding,
-    #                            dilation=dilation, bias=bias),
-    #                     ReLU(),
-    #                     Conv2d(in_channels=in_channels, out_channels=out_channels,
-    #                            kernel_size=kernel_size, stride=stride, padding=padding,
-    #                            dilation=dilation, bias=bias),
-    #                     ReLU(),
-    #                     TransposeConv2d(in_channels=in_channels, out_channels=out_channels,
-    #                                     kernel_size=kernel_size, stride=stride, padding=padding,
-    #                                     output_padding=output_padding, dilation=dilation,
-    #                                     bias=bias),
-    #                     ReLU(),
-    #                     TransposeConv2d(in_channels=in_channels, out_channels=out_channels,
-    #                                     kernel_size=kernel_size, stride=stride, padding=padding,
-    #                                     output_padding=output_padding, dilation=dilation,
-    #                                     bias=bias),
-    #                     Sigmoid()
-    #                     )
+    # conv1 = torch.nn.Conv2d(in_channels=3, out_channels=nb_channels,
+    #                         kernel_size=kernel_size, stride=stride, padding=padding,
+    #                         dilation=dilation, bias=bias, device=device)
     #
-    # x = torch.randn((1, in_channels, 32, 32)).to(device)
-    # print(layers(x).size())
-    # torch.testing.assert_allclose(layers(x), layers(x))
-    # torch.testing.assert_allclose(x, x)
-    # print(layers(x))
-    # print(layers.param()[0])
-    # layers.backward(torch.ones_like(layers(x)))
+    # conv2 = torch.nn.Conv2d(in_channels=nb_channels, out_channels=nb_channels,
+    #                         kernel_size=kernel_size, stride=stride, padding=padding,
+    #                         dilation=dilation, bias=bias, device=device)
+    #
+    # transpconv1 = torch.nn.ConvTranspose2d(in_channels=nb_channels, out_channels=nb_channels,
+    #                                        kernel_size=kernel_size, stride=stride, padding=padding,
+    #                                        output_padding=output_padding, dilation=dilation,
+    #                                        bias=bias, device=device)
+    #
+    # transpconv2 = torch.nn.ConvTranspose2d(in_channels=nb_channels, out_channels=3,
+    #                                        kernel_size=kernel_size, stride=stride, padding=padding,
+    #                                        output_padding=output_padding, dilation=dilation,
+    #                                        bias=bias, device=device)
+    #
+    # layers = torch.nn.Sequential(conv1, torch.nn.ReLU(), conv2, torch.nn.ReLU(), transpconv1, torch.nn.ReLU(),
+    #                              transpconv2, torch.nn.Sigmoid())
+    #
+    # cv1 = Conv2d(in_channels=3, out_channels=nb_channels, kernel_size=kernel_size, stride=stride, padding=padding,
+    #              dilation=dilation, bias=bias)
+    # cv1.weight = conv1.weight.clone().detach()
+    # cv1.bias = conv1.bias.clone().detach()
+    #
+    # cv2 = Conv2d(in_channels=nb_channels, out_channels=nb_channels, kernel_size=kernel_size, stride=stride,
+    #              padding=padding, dilation=dilation, bias=bias)
+    # cv2.weight = conv2.weight.clone().detach()
+    # cv2.bias = conv2.bias.clone().detach()
+    #
+    # cvt1 = TransposeConv2d(in_channels=nb_channels, out_channels=nb_channels, kernel_size=kernel_size, stride=stride,
+    #                        padding=padding, output_padding=output_padding, dilation=dilation, bias=bias)
+    # cvt1.weight = transpconv1.weight.clone().detach()
+    # cvt1.bias = transpconv1.bias.clone().detach()
+    #
+    # cvt2 = TransposeConv2d(in_channels=nb_channels, out_channels=3, kernel_size=kernel_size, stride=stride,
+    #                        padding=padding,
+    #                        output_padding=output_padding, dilation=dilation, bias=bias)
+    # cvt2.weight = transpconv2.weight.clone().detach()
+    # cvt2.bias = transpconv2.bias.clone().detach()
+    #
+    # l = Sequential(cv1, ReLU(), cv2, ReLU(), cvt1, ReLU(), cvt2, Sigmoid())
+    #
+    # x = torch.randn((50, 3, 32, 32)).to(device)
+    # target = torch.randn((50, 3, 32, 32)).to(device)
+    # x_auto = x.clone().detach()
+    # x_auto.requires_grad = True
+    #
+    # output_auto = layers(x_auto)
+    # output = l(x)
+    # criterion_auto = torch.nn.MSELoss()
+    # criterion = MSE()
+    #
+    # loss_auto = criterion_auto(output_auto, target)
+    # loss = criterion(output, target)
+    #
+    # loss_auto.backward()
+    # input_grad = l.backward(criterion.backward())
+    #
+    # torch.testing.assert_allclose(output, output_auto)
+    # torch.testing.assert_allclose(loss, loss_auto)
+    # torch.testing.assert_allclose(input_grad, x_auto.grad)
+    # torch.testing.assert_allclose(cv1.grad_weight, conv1.weight.grad)
+    # torch.testing.assert_allclose(cv1.grad_bias, conv1.bias.grad)
+    # torch.testing.assert_allclose(cvt1.grad_weight, transpconv1.weight.grad)
+    # torch.testing.assert_allclose(cvt1.grad_bias, transpconv1.bias.grad)
 
     print("end")

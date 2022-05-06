@@ -38,7 +38,7 @@ class Denoiser(m.Module):
         return self.layers(input)
 
     def backward(self, grad_output):
-        self.layers.backward(grad_output)
+        return self.layers.backward(grad_output)
 
     def param(self):
         return self.layers.parameters
