@@ -5,7 +5,7 @@ from torch import empty, cat, arange
 from torch.nn.functional import fold, unfold
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-torch.set_grad_enabled(True)
+torch.set_grad_enabled(False)
 
 
 class Module(object):
@@ -74,7 +74,10 @@ class MSELoss(Module):
         return torch.mean((input - target) ** 2)
 
     def backward(self):
-        return 2 * (self.input - self.target)
+        M = 1
+        for i in self.input.size():
+            M *= i
+        return 2 / M * (self.input - self.target)
 
 
 class SGD(Module):
@@ -290,38 +293,61 @@ class ConvTranspose(Module):
 
 
 if __name__ == "__main__":
-    # t = Relu()
-    # x = -torch.ones((1, 4, 1)).to(device)
-    # g = torch.ones((1, 4, 1)).to(device)
-    # print(t(x))
-    # print(t.backward(g))
-    # print(x)
-    # x = torch.randn((10, 3, 32, 32)).to(device)
-    # test = torch.nn.ReLU()
-    # torch.testing.assert_allclose(t(x), test(x))
+    # r = Relu()
+    # relu = torch.nn.ReLU()
+    # x = torch.randn((10, 5, 32, 32)).to(device)
+    # x_auto = x.clone().detach()
+    # x_auto.requires_grad = True
+    #
+    # output_auto = relu(x_auto)
+    # output_auto.retain_grad()
+    # output = r(x)
+    # loss_auto = output_auto.sum()
+    # loss = output.sum()
+    #
+    # torch.testing.assert_allclose(output, output_auto)
+    # torch.testing.assert_allclose(loss, loss_auto)
+    #
+    # loss_auto.backward()
+    # output_grad = output_auto.grad.clone().detach()
+    # x_grad = r.backward(output_grad)
+    # torch.testing.assert_allclose(x_grad, x_auto.grad)
 
-    # t = Sigmoid()
-    # x = torch.ones((1, 4, 1)).to(device) * 10000
-    # g = torch.ones((1, 4, 1)).to(device)
-    # print(t(x))
-    # print(t.backward(g))
-    # print(x)
-    # x = torch.randn((10, 3, 32, 32)).to(device)
-    # test = torch.nn.Sigmoid()
-    # torch.testing.assert_allclose(t(x), test(x))
+    # sigmo = torch.nn.Sigmoid()
+    # s = Sigmoid()
+    # x = torch.randn((10, 5, 32, 32)).to(device)
+    # x_auto = x.clone().detach()
+    # x_auto.requires_grad = True
+    #
+    # output_auto = sigmo(x_auto)
+    # output_auto.retain_grad()
+    # output = s(x)
+    # loss_auto = output_auto.sum()
+    # loss = output.sum()
+    #
+    # torch.testing.assert_allclose(output, output_auto)
+    # torch.testing.assert_allclose(loss, loss_auto)
+    #
+    # loss_auto.backward()
+    # output_grad = output_auto.grad.clone().detach()
+    # x_grad = s.backward(output_grad)
+    # torch.testing.assert_allclose(x_grad, x_auto.grad)
 
     # loss = torch.nn.MSELoss()
     # l = MSELoss()
-    # x = torch.randn(10, 3, 32, 32)
-    # target = torch.randn(10, 3, 32, 32)
-    # torch.testing.assert_allclose(loss(x, target), l(x, target))
-
-    # t = MSELoss()
-    # x = torch.ones((1 ,4, 1)).to(device) * 0
-    # y = torch.ones((1 ,4, 1)).to(device)
-    # print(t.forward(x, y))
-    # print(t.backward())
-    # print(x)
+    # x = torch.randn((10, 5, 32, 32)).to(device)
+    # x_auto = x.clone().detach()
+    # x_auto.requires_grad = True
+    # target = torch.randn((10, 5, 32, 32)).to(device)
+    #
+    # output_auto = loss(x_auto, target)
+    # output = l(x, target)
+    #
+    # torch.testing.assert_allclose(output, output_auto)
+    #
+    # output_auto.backward()
+    # x_grad = l.backward()
+    # torch.testing.assert_allclose(x_grad, x_auto.grad)
 
     # fold = torch.nn.Fold(output_size=(4, 5), kernel_size=(2, 2))
     # x = torch.ones(1, 2 * 2, 12)
@@ -355,7 +381,7 @@ if __name__ == "__main__":
     #
     # torch.testing.assert_allclose(output, output_auto)
     # torch.testing.assert_allclose(loss, loss_auto)
-    # 
+    #
     # loss_auto.backward()
     # output_grad = output_auto.grad.clone().detach()
     # x_grad = cv.backward(output_grad)

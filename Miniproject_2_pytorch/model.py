@@ -21,7 +21,7 @@ class Model:
         self.model = denoiser.Denoiser()
         self.model.to(device)
         self.criterion = nn.MSELoss()
-        self.lr = 0.001
+        self.lr = 0.01
         self.optimizer = optim.SGD(self.model.parameters(), lr=self.lr)
         self.mini_batch_size = mini_batch_size
 
