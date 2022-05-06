@@ -228,7 +228,7 @@ class ConvTranspose(Module):
         return self.forward(input)
 
     def initialize(self):
-        n = self.in_channels
+        n = self.out_channels
         for k in self.kernel_size:
             n *= k
         std = 1 / math.sqrt(n)
