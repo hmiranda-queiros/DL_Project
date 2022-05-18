@@ -14,18 +14,12 @@ class Denoiser(nn.Module):
         self.encoder_1 = nn.Sequential(
             nn.Conv2d(in_channels=3, out_channels=nb_channels, kernel_size=kernel_size, padding="same"),
             nn.LeakyReLU(negative_slope=alpha),
-            # nn.Conv2d(in_channels=nb_channels, out_channels=nb_channels, kernel_size=kernel_size,
-            #           padding="same"),
-            # nn.LeakyReLU(negative_slope=alpha),
         )
 
         self.encoder_2 = nn.Sequential(
             nn.Conv2d(in_channels=nb_channels, out_channels=nb_channels, kernel_size=kernel_size,
                       padding="same"),
             nn.LeakyReLU(negative_slope=alpha),
-            # nn.Conv2d(in_channels=nb_channels, out_channels=nb_channels, kernel_size=kernel_size,
-            #           padding="same"),
-            # nn.LeakyReLU(negative_slope=alpha)
         )
 
         self.encoder_3 = nn.Sequential(
@@ -50,18 +44,12 @@ class Denoiser(nn.Module):
             nn.Conv2d(in_channels=nb_channels * 3, out_channels=nb_channels * 2, kernel_size=kernel_size,
                       padding="same"),
             nn.LeakyReLU(negative_slope=alpha),
-            # nn.Conv2d(in_channels=nb_channels * 2, out_channels=nb_channels * 2, kernel_size=kernel_size,
-            #           padding="same"),
-            # nn.LeakyReLU(negative_slope=alpha),
         )
 
         self.decoder_1 = nn.Sequential(
             nn.Conv2d(in_channels=nb_channels * 2 + 3, out_channels=24, kernel_size=kernel_size,
                       padding="same"),
             nn.LeakyReLU(negative_slope=alpha),
-            # nn.Conv2d(in_channels=24, out_channels=12, kernel_size=kernel_size,
-            #           padding="same"),
-            # nn.LeakyReLU(negative_slope=alpha),
             nn.Conv2d(in_channels=24, out_channels=3, kernel_size=kernel_size,
                       padding="same"),
             nn.ReLU(),

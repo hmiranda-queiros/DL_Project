@@ -26,9 +26,7 @@ def main():
     noisy_imgs = noisy_imgs.float()
     clean_imgs = clean_imgs.float()
 
-    # Normalisation of data
-    noisy_imgs_1.div_(255)
-    noisy_imgs_2.div_(255)
+
     noisy_imgs.div_(255)
     clean_imgs.div_(255)
 

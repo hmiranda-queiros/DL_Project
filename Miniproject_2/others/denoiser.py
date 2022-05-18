@@ -1,4 +1,4 @@
-from . import module as m
+from .. import model as m
 
 
 class Denoiser(m.Module):
