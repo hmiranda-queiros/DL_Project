@@ -27,6 +27,11 @@ class Model:
         parameters = pickle.load(infile)
         infile.close()
 
+        # send to correct device
+        for i in range(len(parameters)):
+            if parameters[i]:
+                parameters[i][0][0] = parameters[i][0][0].to(device)
+                parameters[i][1][0] = parameters[i][1][0].to(device)
         self.model.load(parameters)
 
     def train(self, train_input, train_target, num_epochs) -> None:
