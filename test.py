@@ -177,18 +177,20 @@ def title(msg):
 
 
 if __name__ == '__main__':
-    from argparse import ArgumentParser
+    # from argparse import ArgumentParser
+    #
+    # parser = ArgumentParser()
+    # parser.add_argument('-p', '--project-path', help='Path to the project folder', required=True)
+    # parser.add_argument('-d', '--data-path', help='Path to the data folder', required=True)
+    # args = parser.parse_args()
 
-    parser = ArgumentParser()
-    parser.add_argument('-p', '--project-path', help='Path to the project folder', required=True)
-    parser.add_argument('-d', '--data-path', help='Path to the data folder', required=True)
-    args = parser.parse_args()
+    project_path = Path(".")
+    data_path = Path("./data")
 
-    project_path = Path(args.project_path)
-    data_path = Path(args.data_path)
+    print(project_path)
 
     if re.match(r'^Proj(_(\d{6})){3}$', project_path.name) is None:
         warn("Project folder name must be in the form Proj_XXXXXX_XXXXXX_XXXXXX")
 
-    sys.path.append(args.project_path)
+    sys.path.append(project_path)
     unittest.main(argv=[''], verbosity=0)

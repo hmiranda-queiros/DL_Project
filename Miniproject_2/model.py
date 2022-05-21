@@ -2,18 +2,18 @@ import torch
 import time
 import pickle
 
-from .others import denoiser
-
 from torch import empty
 from torch.nn.functional import fold, unfold
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 torch.set_grad_enabled(False)
 
 
 class Model:
     def __init__(self) -> None:
         # instantiate model + optimizer + loss function + any other stuff you need
+        from .others import denoiser
         self.model = denoiser.Denoiser()
         self.criterion = MSE()
         self.lr = 0.01
@@ -22,7 +22,7 @@ class Model:
 
     def load_pretrained_model(self) -> None:
         # This loads the parameters saved in bestmodel.pth into the model
-        filename = 'bestmodel.pth'
+        filename = './Miniproject_2/bestmodel.pth'
         infile = open(filename, 'rb')
         parameters = pickle.load(infile)
         infile.close()

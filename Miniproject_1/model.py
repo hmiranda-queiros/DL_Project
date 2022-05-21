@@ -5,7 +5,8 @@ from torch import optim
 from torch import nn
 from .others import denoiser
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 
 
 class Model:
@@ -56,10 +57,6 @@ class Model:
                     print(
                         f"Epoch number : {e + 1}, Step number : {nb_step},"
                         f" mini_batch_size = {self.mini_batch_size}, Total running time : {total_time:.1f} s")
-
-                # if total_time > 10 * 60:
-                #     print("10 mins exceeded")
-                #     return None
 
         print(f"End of training with total running time : {total_time:.1f} s")
 

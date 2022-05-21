@@ -63,7 +63,7 @@ def main():
 
     if save:
         # Save the model
-        filename = 'bestmodel.pth'
+        filename = 'Miniproject_2/bestmodel.pth'
         outfile = open(filename, 'wb')
         parameters = denoiser.model.param()
         pickle.dump(parameters, outfile)
