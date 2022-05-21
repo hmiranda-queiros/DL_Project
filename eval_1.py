@@ -6,10 +6,9 @@ import numpy as np
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def psnr(denoised, ground_truth):
-    # Peak Signal to Noise Ratio : denoised and ground_truth have range [0, 1]
-    mse = torch.mean((denoised - ground_truth) ** 2)
-    return -10 * torch.log10(mse + 10 ** -8)
+def psnr(x, y, max_range=1.0):
+    assert x.shape == y.shape and x.ndim == 4
+    return 20 * torch.log10(torch.tensor(max_range)) - 10 * torch.log10(((x - y) ** 2).mean((1, 2, 3))).mean()
 
 
 def main():
@@ -85,7 +84,7 @@ def main():
 
 
 if __name__ == "__main__":
-    load = False
+    load = True
     save = False
     num_epochs = 2
     mini_batch_size = 50
