@@ -66,11 +66,11 @@ class Model:
                     return None
 
             # adapt minibatch_size
-            if result >= 23:
-                self.mini_batch_size = 25
-
-            if result >= 24:
-                self.mini_batch_size = 25
+            # if result >= 23:
+            #     self.mini_batch_size = 25
+            #
+            # if result >= 24:
+            #     self.mini_batch_size = 25
 
         print(f"End of training with total running time : {total_time:.1f} s")
 

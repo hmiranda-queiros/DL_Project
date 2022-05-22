@@ -62,7 +62,7 @@ def main():
 
     if save:
         # Save the model
-        filename = 'bestmodel.pth'
+        filename = './Miniproject_2/bestmodel.pth'
         outfile = open(filename, 'wb')
         parameters = denoiser.model.param()
         pickle.dump(parameters, outfile)
@@ -90,8 +90,8 @@ def main():
 
 
 if __name__ == "__main__":
-    load = False
+    load = True
     save = False
-    num_epochs = 1
+    num_epochs = 1000
     mini_batch_size = 50
     main()

@@ -60,7 +60,7 @@ def main():
 
     if save:
         # Save the model
-        torch.save(denoiser.model.state_dict(), './Miniproject_1/bestmodel.pth')
+        torch.save(denoiser.model.state_dict(), './Miniproject_2_pytorch/bestmodel.pth')
 
     # Plots the result
     images_clean = clean_imgs[:5].mul(255).to("cpu").numpy()
