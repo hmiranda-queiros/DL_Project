@@ -10,10 +10,9 @@ torch.set_grad_enabled(False)
 
 
 # For mini-project 2
-def psnr(denoised, ground_truth):
-    # Peak Signal to Noise Ratio : denoised and ground_truth have range [0, 1]
-    mse = torch.mean((denoised - ground_truth) ** 2)
-    return -10 * torch.log10(mse + 10 ** -8)
+def psnr(x, y, max_range=1.0):
+    assert x.shape == y.shape and x.ndim == 4
+    return 20 * torch.log10(torch.tensor(max_range)) - 10 * torch.log10(((x - y) ** 2).mean((1, 2, 3))).mean()
 
 
 class Model:
