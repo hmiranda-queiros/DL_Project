@@ -90,8 +90,8 @@ def main():
 
 
 if __name__ == "__main__":
-    load = True
+    load = False
     save = False
-    num_epochs = 1000
+    num_epochs = 1
     mini_batch_size = 50
     main()
