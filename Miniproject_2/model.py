@@ -146,7 +146,7 @@ class MSE(Module):
     def forward(self, input, target):
         self.input = input.clone().detach()
         self.target = target.clone().detach()
-        return torch.mean((input - target) ** 2)
+        return ((input - target) ** 2).mean()
 
     def backward(self):
         M = 1
