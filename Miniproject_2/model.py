@@ -7,13 +7,14 @@ from torch.nn.functional import fold, unfold
 
 # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device = torch.device("cpu")
-torch.set_grad_enabled(False)
 
 
 class Model:
     def __init__(self) -> None:
         # instantiate model + optimizer + loss function + any other stuff you need
         from .others import denoiser
+        torch.set_grad_enabled(False)
+        
         self.model = denoiser.Denoiser()
         self.criterion = MSE()
         self.lr = 0.01
