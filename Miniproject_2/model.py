@@ -13,7 +13,6 @@ class Model:
     def __init__(self) -> None:
         # instantiate model + optimizer + loss function + any other stuff you need
         from .others import denoiser
-        torch.set_grad_enabled(False)
 
         self.model = denoiser.Denoiser()
         self.criterion = MSE()

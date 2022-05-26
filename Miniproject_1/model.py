@@ -45,7 +45,6 @@ class Model:
 
                 output = self.model(train_input.narrow(0, b, self.mini_batch_size))
                 loss = self.criterion(output, train_target.narrow(0, b, self.mini_batch_size))
-                loss.requires_grad = True
                 self.model.zero_grad()
                 loss.backward()
                 self.optimizer.step()
