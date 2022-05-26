@@ -14,7 +14,7 @@ class Model:
         # instantiate model + optimizer + loss function + any other stuff you need
         from .others import denoiser
         torch.set_grad_enabled(False)
-        
+
         self.model = denoiser.Denoiser()
         self.criterion = MSE()
         self.lr = 0.01
